@@ -67,8 +67,6 @@ function write_log_strict(mysqli $conn, string $action, int $user_id = 0, string
     $stmt->bind_param('issssiss', $userId, $action, $info, $entityStr, $entity_id, $ip, $userAgent, $timestamp);
     $stmt->execute();
     $stmt->close();
-
-    write_log_file($action, $userId ?? 0, $info);
 }
 
 function write_log_file(string $action, int $userId, string $info): void

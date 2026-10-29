@@ -38,11 +38,11 @@ if ($row) {
         $_SESSION['ua'] = current_user_agent();
 
         csrf_rotate();
-        write_log($conn, 'LOGIN_SUCCESS', (int) $row['id'], 'username=' . $user);
+        write_log($conn, 'LOGIN_SUCCESS', (int) $row['id'], 'username=' . $user, 'user', (int) $row['id']);
 
         redirect('../dashboard');
     }
 }
 
-write_log($conn, 'LOGIN_FAILED', (int) ($row['id'] ?? 0), 'username=' . $user);
+write_log($conn, 'LOGIN_FAILED', (int) ($row['id'] ?? 0), 'username=' . $user, 'user', $row['id'] ?? null);
 redirect('../login?error=1');
