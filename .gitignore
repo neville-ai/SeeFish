@@ -1,0 +1,26 @@
+# Environment dan kredensial lokal
+.env
+.env.*
+!.env.example
+
+# Log runtime dan data sensitif
+/logs/*
+!/logs/.htaccess
+*.log
+
+# Dependency lokal
+/vendor/
+/node_modules/
+
+# Tooling editor dan sistem operasi
+/.idea/
+/.vscode/
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
+*~
+
+# Artifact/backup lokal
+/backups/
+/artifacts/

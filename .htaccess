@@ -1,0 +1,39 @@
+Options -Indexes
+DirectoryIndex index.php
+
+# Jangan pernah menyajikan file environment, metadata Git, atau file konfigurasi.
+<FilesMatch "^(\.env(\..*)?|\.git.*|\.htaccess|\.gitignore|\.gitattributes)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Redirect domain/HTTPS tidak lagi ditulis di aplikasi.
+# Konfigurasi tersebut harus dilakukan di vhost/server setelah domain final ditentukan.
+
+ErrorDocument 404 /404.php
+ErrorDocument 403 /403.php
+
+RewriteEngine On
+
+# Blokir akses langsung ke direktori metadata Git jika repository dibuat.
+RewriteRule (^|/)\.git(/|$) - [F,L]
+
+# Akses file tanpa .php tanpa redirect
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^([^\.]+)$ $1.php [NC,L]
+
+# === HEADER KEAMANAN ===
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self';"
+    Header always set Cross-Origin-Opener-Policy "same-origin"
+    Header always set X-Permitted-Cross-Domain-Policies "none"
+</IfModule>
