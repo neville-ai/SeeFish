@@ -1,0 +1,45 @@
+/* SeeFish design tokens — sumber tunggal warna, tipografi, dan spacing. */
+:root {
+  --bg: #F4F7FB;
+  --surface: #FFFFFF;
+  --surface-alt: #F8FAFC;
+  --border: #E2E8F0;
+  --border-subtle: #EEF2F6;
+  --primary: #1D4ED8;
+  --primary-dark: #1E3A8A;
+  --primary-light: #3B82F6;
+  --primary-soft: #DBEAFE;
+  --primary-pale: #60A5FA;
+  --heading: #0F172A;
+  --text: #0F172A;
+  --text-dim: #475569;
+  --text-muted: #64748B;
+  --text-faint: #94A3B8;
+  --danger: #DC2626;
+  --danger-soft: #FEF2F2;
+  --danger-border: #FECACA;
+  --warning: #D97706;
+  --warning-soft: #FEF3C7;
+  --warning-border: #FCD34D;
+  --success: #166534;
+  --success-soft: #DCFCE7;
+  --success-border: #86EFAC;
+  --info: #1D4ED8;
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: "DM Sans", "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --focus-ring: 0 0 0 3px rgba(29, 78, 216, 0.22);
+  --sidebar-width: 248px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+}

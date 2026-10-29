@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/config/auth.php';
 require_once __DIR__ . '/config/csrf.php';
 require_once __DIR__ . '/config/koneksi.php';
+require_once __DIR__ . '/config/layout.php';
 
 $username = (string) ($_SESSION['username'] ?? 'Pengguna');
 $userId = (int) $_SESSION['user_id'];
@@ -11,6 +12,7 @@ $userRole = (string) ($_SESSION['role'] ?? 'Admin Kolam');
 
 // Ambil daftar kolam milik user
 $ponds = [];
+$kolamOk = true;
 try {
     $stmt = $conn->prepare(
         "SELECT k.id, k.nama, k.lokasi, k.luas_m2, k.kedalaman_m, k.status, k.created_at,
@@ -27,121 +29,22 @@ try {
         $stmt->close();
     }
 } catch (Throwable $e) {
+    $kolamOk = false;
     error_log('Kolam fetch error: ' . $e->getMessage());
 }
 
-header('X-Content-Type-Options: nosniff');
-header('X-Frame-Options: DENY');
-header('Referrer-Policy: strict-origin-when-cross-origin');
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self';");
+$sfActions = '';
+seefish_app_start([
+    'nav' => 'kolam',
+    'title' => 'Informasi Kolam - SeeFish',
+    'heading' => 'Informasi Kolam',
+    'subtitle' => 'Kelola data dan status kolam budidaya Anda',
+    'breadcrumbs' => [['Dashboard', 'dashboard'], ['Informasi Kolam']],
+    'actions' => $sfActions,
+    'query_ok' => $kolamOk,
+]);
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Informasi Kolam - SeeFish</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet" href="assets/css/vars.css">
-<link rel="stylesheet" href="assets/css/dashboard.css">
-<link rel="stylesheet" href="assets/css/logo.css">
-</head>
-<body>
-
-<div class="db-wrap">
-
-  <!-- SIDEBAR -->
-  <aside class="db-sidebar">
-    <div class="db-logo">
-      <span class="seefish-logo-mark seefish-logo-mark--nav">
-        <img src="assets/SeeFish%20Logo.png" alt="SeeFish Logo" class="seefish-logo-img">
-      </span>
-      <span class="db-logo-name">SeeFish</span>
-    </div>
-
-    <div class="db-nav-section">Menu Utama</div>
-    <a href="dashboard" class="db-nav-item">
-      <i class="fa-solid fa-chart-line"></i> Dashboard
-    </a>
-
-    <div class="db-nav-section">Budidaya</div>
-    <a href="kolam" class="db-nav-item active">
-      <i class="fa-solid fa-water"></i> Informasi Kolam
-    </a>
-    <a href="siklus" class="db-nav-item">
-      <i class="fa-solid fa-fish-fins"></i> Siklus Budidaya
-    </a>
-
-    <div class="db-nav-section">Operasional</div>
-    <a href="tebar" class="db-nav-item">
-      <i class="fa-solid fa-seedling"></i> Tebar Awal
-    </a>
-    <a href="pakan" class="db-nav-item">
-      <i class="fa-solid fa-bowl-food"></i> Catatan Pakan
-    </a>
-    <a href="mortalitas" class="db-nav-item">
-      <i class="fa-solid fa-skull-crossbones"></i> Catatan Kematian
-    </a>
-    <a href="panen" class="db-nav-item">
-      <i class="fa-solid fa-fish"></i> Catatan Panen
-    </a>
-
-    <div class="db-nav-section">Pelaporan</div>
-    <a href="estimasi" class="db-nav-item">
-      <i class="fa-solid fa-clock-rotate-left"></i> Estimasi Ikan
-    </a>
-    <a href="riwayat" class="db-nav-item">
-      <i class="fa-solid fa-file-lines"></i> Riwayat & Koreksi
-    </a>
-    <a href="log" class="db-nav-item">
-      <i class="fa-solid fa-clipboard-list"></i> Log Aktivitas
-    </a>
-    <a href="ekspor" class="db-nav-item">
-      <i class="fa-solid fa-file-csv"></i> Ekspor CSV
-    </a>
-
-    <div class="db-sidebar-spacer"></div>
-
-    <div class="db-sidebar-footer">
-      <div class="db-sidebar-uname"><i class="fa-solid fa-user db-user-icon"></i><?php echo e($username); ?></div>
-      <div class="db-sidebar-role"><?php echo e($userRole); ?></div>
-    </div>
-
-    <form method="POST" action="logout" class="logout-form">
-      <?php csrf_input(); ?>
-      <button type="submit" class="db-nav-item logout-btn">
-        <i class="fa-solid fa-right-from-bracket"></i> Logout
-      </button>
-    </form>
-  </aside>
-
-  <!-- MAIN -->
-  <main class="db-main">
-
-    <!-- TOPBAR -->
-    <div class="db-topbar">
-      <div>
-        <h1>Informasi Kolam</h1>
-        <p>Kelola data dan status kolam budidaya Anda</p>
-      </div>
-      <div class="topbar-flex">
-        <div class="db-live-badge">
-          <span class="db-dot"></span>
-          <?php echo e($username); ?>
-        </div>
-        <form method="POST" action="logout" class="logout-form logout-form-mobile">
-          <?php csrf_input(); ?>
-          <button type="submit" class="db-btn db-btn-ghost db-logout-mobile" aria-label="Logout">
-            <i class="fa-solid fa-right-from-bracket"></i>
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- NOTIFIKASI -->
+<!-- NOTIFIKASI -->
     <?php if (isset($_GET['success'])): ?>
       <?php if ($_GET['success'] === 'added'): ?>
         <div class="db-notif db-notif-ok"><i class="fa-solid fa-check"></i> Kolam berhasil ditambahkan.</div>
@@ -169,7 +72,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       <form method="POST" action="process/tambah_kolam" class="db-form">
         <?php csrf_input(); ?>
         <div class="db-field" style="min-width: 180px;">
-          <label for="nama">Nama Kolam *</label>
+          <label for="nama">Nama Kolam <span class="req">*</span></label>
           <input type="text" id="nama" name="nama" placeholder="Contoh: Kolam Terpal A1" required maxlength="100">
         </div>
         <div class="db-field" style="min-width: 180px;">
@@ -259,10 +162,6 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
         </div>
       <?php endif; ?>
     </div>
-
-  </main>
-</div>
-
 <!-- MODAL EDIT KOLAM -->
 <div id="editModal" class="modal-overlay">
   <div class="modal-box">
@@ -275,7 +174,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       <input type="hidden" id="edit_id" name="id">
       <div class="form-grid">
         <div class="db-field form-grid-full">
-          <label for="edit_nama">Nama Kolam *</label>
+          <label for="edit_nama">Nama Kolam <span class="req">*</span></label>
           <input type="text" id="edit_nama" name="nama" required maxlength="100">
         </div>
         <div class="db-field form-grid-full">
@@ -305,8 +204,6 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
     </form>
   </div>
 </div>
-
-<script src="assets/js/dashboard.js"></script>
 <script>
 function openEditModal(pond) {
   document.getElementById('edit_id').value = pond.id;
@@ -324,5 +221,4 @@ document.getElementById('editModal').addEventListener('click', function(e) {
   if (e.target === this) closeEditModal();
 });
 </script>
-</body>
-</html>
+<?php seefish_app_end(); ?>

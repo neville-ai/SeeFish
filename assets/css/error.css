@@ -7,10 +7,10 @@
 
 /* ===== VARIABLES ===== */
 :root {
-  --bg:           #F8FAFC;
+  --bg:           #F4F7FB;
   --surface:      #FFFFFF;
   --border:       #E2E8F0;
-  --blue:         #2563EB;
+  --blue:         #1D4ED8;
   --blue-dark:    #1E3A8A;
   --blue-light:   #DBEAFE;
   --text:         #0F172A;
@@ -69,14 +69,7 @@ body::before {
   overflow: hidden;
 }
 
-/* glow effect */
-.error-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at top, rgba(37,99,235,0.12), transparent 70%);
-  pointer-events: none;
-}
+.error-card::before { display: none; }
 
 /* ===== TEXT ===== */
 .error-code {

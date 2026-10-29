@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/config/auth.php';
 require_once __DIR__ . '/config/csrf.php';
 require_once __DIR__ . '/config/koneksi.php';
+require_once __DIR__ . '/config/layout.php';
 
 $username = (string) ($_SESSION['username'] ?? 'Pengguna');
 $userId = (int) $_SESSION['user_id'];
@@ -13,6 +14,7 @@ $userRole = (string) ($_SESSION['role'] ?? 'Admin Kolam');
 $cycles = [];
 $availablePonds = [];
 $speciesList = [];
+$siklusOk = true;
 
 try {
     // 1. Daftar seluruh siklus user
@@ -54,182 +56,22 @@ try {
         $res->free();
     }
 } catch (Throwable $e) {
+    $siklusOk = false;
     error_log('Siklus fetch error: ' . $e->getMessage());
 }
 
-header('X-Content-Type-Options: nosniff');
-header('X-Frame-Options: DENY');
-header('Referrer-Policy: strict-origin-when-cross-origin');
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self';");
+$sfActions = '';
+seefish_app_start([
+    'nav' => 'siklus',
+    'title' => 'Siklus Budidaya - SeeFish',
+    'heading' => 'Siklus Budidaya',
+    'subtitle' => 'Buka dan pantau siklus penebaran benih ikan pada kolam Anda',
+    'breadcrumbs' => [['Dashboard', 'dashboard'], ['Siklus Budidaya']],
+    'actions' => $sfActions,
+    'query_ok' => $siklusOk,
+]);
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Siklus Budidaya - SeeFish</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet" href="assets/css/vars.css">
-<link rel="stylesheet" href="assets/css/dashboard.css">
-<link rel="stylesheet" href="assets/css/logo.css">
-<style>
-.badge-status {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 50px;
-  font-size: 11px;
-  font-weight: 500;
-}
-.badge-berjalan { background: #DBEAFE; color: #1E40AF; border: 1px solid #93C5FD; }
-.badge-selesai { background: #DCFCE7; color: #166534; border: 1px solid #86EFAC; }
-.badge-dibatalkan { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(4px);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-}
-.modal-overlay.active { display: flex; }
-.modal-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  width: 90%;
-  max-width: 480px;
-  padding: 24px;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
-}
-.modal-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-.modal-title {
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--text);
-}
-.modal-close {
-  background: transparent;
-  border: none;
-  font-size: 18px;
-  color: var(--text-faint);
-  cursor: pointer;
-}
-.select-input {
-  padding: 10px 13px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: 13px;
-  width: 100%;
-}
-</style>
-</head>
-<body>
-
-<div class="db-wrap">
-
-  <!-- SIDEBAR -->
-  <aside class="db-sidebar">
-    <div class="db-logo">
-      <span class="seefish-logo-mark seefish-logo-mark--nav">
-        <img src="assets/SeeFish%20Logo.png" alt="SeeFish Logo" class="seefish-logo-img">
-      </span>
-      <span class="db-logo-name">SeeFish</span>
-    </div>
-
-    <div class="db-nav-section">Menu Utama</div>
-    <a href="dashboard" class="db-nav-item">
-      <i class="fa-solid fa-chart-line"></i> Dashboard
-    </a>
-
-    <div class="db-nav-section">Budidaya</div>
-    <a href="kolam" class="db-nav-item">
-      <i class="fa-solid fa-water"></i> Informasi Kolam
-    </a>
-    <a href="siklus" class="db-nav-item active">
-      <i class="fa-solid fa-fish-fins"></i> Siklus Budidaya
-    </a>
-
-    <div class="db-nav-section">Operasional</div>
-    <a href="tebar" class="db-nav-item">
-      <i class="fa-solid fa-seedling"></i> Tebar Awal
-    </a>
-    <a href="pakan" class="db-nav-item">
-      <i class="fa-solid fa-bowl-food"></i> Catatan Pakan
-    </a>
-    <a href="mortalitas" class="db-nav-item">
-      <i class="fa-solid fa-skull-crossbones"></i> Catatan Kematian
-    </a>
-    <a href="panen" class="db-nav-item">
-      <i class="fa-solid fa-fish"></i> Catatan Panen
-    </a>
-
-    <div class="db-nav-section">Pelaporan</div>
-    <a href="estimasi" class="db-nav-item">
-      <i class="fa-solid fa-clock-rotate-left"></i> Estimasi Ikan
-    </a>
-    <a href="riwayat" class="db-nav-item">
-      <i class="fa-solid fa-file-lines"></i> Riwayat & Koreksi
-    </a>
-    <a href="log" class="db-nav-item">
-      <i class="fa-solid fa-clipboard-list"></i> Log Aktivitas
-    </a>
-    <a href="ekspor" class="db-nav-item">
-      <i class="fa-solid fa-file-csv"></i> Ekspor CSV
-    </a>
-
-    <div class="db-sidebar-spacer"></div>
-
-    <div class="db-sidebar-footer">
-      <div class="db-sidebar-uname"><i class="fa-solid fa-user db-user-icon"></i><?php echo e($username); ?></div>
-      <div class="db-sidebar-role"><?php echo e($userRole); ?></div>
-    </div>
-
-    <form method="POST" action="logout" class="logout-form">
-      <?php csrf_input(); ?>
-      <button type="submit" class="db-nav-item logout-btn">
-        <i class="fa-solid fa-right-from-bracket"></i> Logout
-      </button>
-    </form>
-  </aside>
-
-  <!-- MAIN -->
-  <main class="db-main">
-
-    <!-- TOPBAR -->
-    <div class="db-topbar">
-      <div>
-        <h1>Siklus Budidaya</h1>
-        <p>Buka dan pantau siklus penebaran benih ikan pada kolam Anda</p>
-      </div>
-      <div class="topbar-flex">
-        <div class="db-live-badge">
-          <span class="db-dot"></span>
-          <?php echo e($username); ?>
-        </div>
-        <form method="POST" action="logout" class="logout-form logout-form-mobile">
-          <?php csrf_input(); ?>
-          <button type="submit" class="db-btn db-btn-ghost db-logout-mobile" aria-label="Logout">
-            <i class="fa-solid fa-right-from-bracket"></i>
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- NOTIFIKASI -->
+<!-- NOTIFIKASI -->
     <?php if (isset($_GET['success'])): ?>
       <?php if ($_GET['success'] === 'added'): ?>
         <div class="db-notif db-notif-ok"><i class="fa-solid fa-check"></i> Siklus budidaya berhasil dibuka dengan tebar awal.</div>
@@ -275,7 +117,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
         <form method="POST" action="process/tambah_siklus" class="db-form">
           <?php csrf_input(); ?>
           <div class="db-field" style="min-width: 170px;">
-            <label for="kolam_id">Pilih Kolam *</label>
+            <label for="kolam_id">Pilih Kolam <span class="req">*</span></label>
             <select id="kolam_id" name="kolam_id" class="select-input" required>
               <option value="">-- Pilih Kolam --</option>
               <?php foreach ($availablePonds as $p): ?>
@@ -284,7 +126,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
             </select>
           </div>
           <div class="db-field" style="min-width: 170px;">
-            <label for="jenis_ikan_id">Jenis Ikan *</label>
+            <label for="jenis_ikan_id">Jenis Ikan <span class="req">*</span></label>
             <select id="jenis_ikan_id" name="jenis_ikan_id" class="select-input" required>
               <option value="">-- Pilih Jenis Ikan --</option>
               <?php foreach ($speciesList as $s): ?>
@@ -293,11 +135,11 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
             </select>
           </div>
           <div class="db-field field-small">
-            <label for="tanggal_mulai">Tgl Mulai *</label>
+            <label for="tanggal_mulai">Tanggal Mulai <span class="req">*</span></label>
             <input type="date" id="tanggal_mulai" name="tanggal_mulai" value="<?php echo date('Y-m-d'); ?>" required>
           </div>
           <div class="db-field field-small">
-            <label for="jumlah_tebar">Tebar Awal (ekor) *</label>
+            <label for="jumlah_tebar">Tebar Awal (ekor) <span class="req">*</span></label>
             <input type="number" min="1" max="10000000" id="jumlah_tebar" name="jumlah_tebar" placeholder="Contoh: 1000" required>
           </div>
           <div class="db-field field-small">
@@ -381,10 +223,6 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
         </div>
       <?php endif; ?>
     </div>
-
-  </main>
-</div>
-
 <!-- MODAL TUTUP SIKLUS -->
 <div id="closeModal" class="modal-overlay">
   <div class="modal-box">
@@ -397,7 +235,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       <input type="hidden" id="close_id" name="id">
       <p id="close_info" style="font-size: 13px; color: var(--text-dim); margin-bottom: 14px;"></p>
       <div class="db-field" style="margin-bottom: 12px;">
-        <label for="tanggal_selesai">Tanggal Selesai *</label>
+        <label for="tanggal_selesai">Tanggal Selesai <span class="req">*</span></label>
         <input type="date" id="tanggal_selesai" name="tanggal_selesai" value="<?php echo date('Y-m-d'); ?>" required>
       </div>
       <div class="db-field" style="margin-bottom: 18px;">
@@ -414,8 +252,6 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
     </form>
   </div>
 </div>
-
-<script src="assets/js/dashboard.js"></script>
 <script>
 function openCloseModal(id, kolamNama, tanggalMulai) {
   document.getElementById('close_id').value = id;
@@ -430,5 +266,4 @@ document.getElementById('closeModal').addEventListener('click', function(e) {
   if (e.target === this) closeCloseModal();
 });
 </script>
-</body>
-</html>
+<?php seefish_app_end(); ?>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/config/auth.php';
 require_once __DIR__ . '/config/csrf.php';
 require_once __DIR__ . '/config/koneksi.php';
+require_once __DIR__ . '/config/layout.php';
 
 $username = (string) ($_SESSION['username'] ?? 'Pengguna');
 $userId = (int) $_SESSION['user_id'];
@@ -11,6 +12,7 @@ $userRole = (string) ($_SESSION['role'] ?? 'Admin Kolam');
 
 $filterTipe = (string) ($_GET['tipe'] ?? 'semua');
 $items = [];
+$riwayatOk = true;
 
 try {
     // 1. Ambil pakan
@@ -98,6 +100,7 @@ try {
         return strcmp((string)$b['created_at'], (string)$a['created_at']);
     });
 } catch (Throwable $e) {
+    $riwayatOk = false;
     error_log('Riwayat fetch error: ' . $e->getMessage());
 }
 
@@ -119,111 +122,18 @@ $successMessage = match ($successParam) {
     default => ''
 };
 
-header('X-Content-Type-Options: nosniff');
-header('X-Frame-Options: DENY');
-header('Referrer-Policy: strict-origin-when-cross-origin');
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self';");
+$sfActions = '<a href="log" class="db-btn db-btn-ghost"><i class="fa-solid fa-clipboard-list"></i> Log Aktivitas</a>';
+seefish_app_start([
+    'nav' => 'riwayat',
+    'title' => 'Riwayat & Koreksi - SeeFish',
+    'heading' => 'Riwayat & Koreksi',
+    'subtitle' => 'Audit trail pencatatan budidaya dengan mekanisme koreksi yang transparan.',
+    'breadcrumbs' => [['Dashboard', 'dashboard'], ['Riwayat & Koreksi']],
+    'actions' => $sfActions,
+    'query_ok' => $riwayatOk,
+]);
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Riwayat & Koreksi - SeeFish</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet" href="assets/css/vars.css">
-<link rel="stylesheet" href="assets/css/dashboard.css">
-<link rel="stylesheet" href="assets/css/logo.css">
-</head>
-<body>
-
-<div class="db-wrap">
-
-  <!-- SIDEBAR -->
-  <aside class="db-sidebar">
-    <div class="db-logo">
-      <span class="seefish-logo-mark seefish-logo-mark--nav">
-        <img src="assets/SeeFish%20Logo.png" alt="SeeFish Logo" class="seefish-logo-img">
-      </span>
-      <span class="db-logo-name">SeeFish</span>
-    </div>
-
-    <div class="db-nav-section">Menu Utama</div>
-    <a href="dashboard" class="db-nav-item">
-      <i class="fa-solid fa-chart-line"></i> Dashboard
-    </a>
-
-    <div class="db-nav-section">Budidaya</div>
-    <a href="kolam" class="db-nav-item">
-      <i class="fa-solid fa-water"></i> Informasi Kolam
-    </a>
-    <a href="siklus" class="db-nav-item">
-      <i class="fa-solid fa-fish-fins"></i> Siklus Budidaya
-    </a>
-
-    <div class="db-nav-section">Operasional</div>
-    <a href="tebar" class="db-nav-item">
-      <i class="fa-solid fa-seedling"></i> Tebar Awal
-    </a>
-    <a href="pakan" class="db-nav-item">
-      <i class="fa-solid fa-bowl-food"></i> Catatan Pakan
-    </a>
-    <a href="mortalitas" class="db-nav-item">
-      <i class="fa-solid fa-skull-crossbones"></i> Catatan Kematian
-    </a>
-    <a href="panen" class="db-nav-item">
-      <i class="fa-solid fa-fish"></i> Catatan Panen
-    </a>
-
-    <div class="db-nav-section">Pelaporan</div>
-    <a href="estimasi" class="db-nav-item">
-      <i class="fa-solid fa-clock-rotate-left"></i> Estimasi Ikan
-    </a>
-    <a href="riwayat" class="db-nav-item active">
-      <i class="fa-solid fa-file-lines"></i> Riwayat & Koreksi
-    </a>
-    <a href="log" class="db-nav-item">
-      <i class="fa-solid fa-clipboard-list"></i> Log Aktivitas
-    </a>
-    <a href="ekspor" class="db-nav-item">
-      <i class="fa-solid fa-file-csv"></i> Ekspor CSV
-    </a>
-
-    <div class="db-sidebar-spacer"></div>
-
-    <div class="db-sidebar-footer">
-      <div class="db-sidebar-uname"><i class="fa-solid fa-user db-user-icon"></i><?php echo e($username); ?></div>
-      <div class="db-sidebar-role"><?php echo e($userRole); ?></div>
-    </div>
-
-    <form method="POST" action="logout" class="logout-form">
-      <?php csrf_input(); ?>
-      <button type="submit" class="db-nav-item logout-btn">
-        <i class="fa-solid fa-right-from-bracket"></i> Logout
-      </button>
-    </form>
-  </aside>
-
-  <!-- MAIN CONTENT -->
-  <main class="db-main">
-
-    <!-- TOPBAR -->
-    <header class="db-topbar">
-      <div>
-        <h1 class="db-page-title">Riwayat & Koreksi Operasional</h1>
-        <p class="db-page-sub">Audit trail lengkap pencatatan budidaya dengan mekanisme koreksi data yang transparan.</p>
-      </div>
-      <div>
-        <a href="log" class="btn btn-secondary">
-          <i class="fa-solid fa-clipboard-list"></i> Lihat Log Aktivitas
-        </a>
-      </div>
-    </header>
-
-    <div class="db-content">
+<div class="db-content">
 
       <?php if ($successMessage !== ''): ?>
         <div class="alert-box alert-success">
@@ -342,9 +252,6 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       </div>
 
     </div>
-  </main>
-</div>
-
 <!-- MODAL KOREKSI CATATAN -->
 <div id="koreksiModal" class="modal-overlay">
   <div class="modal-box">
@@ -368,7 +275,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="koreksi_alasan">Alasan Koreksi *</label>
+        <label class="form-label" for="koreksi_alasan">Alasan Koreksi <span class="req">*</span></label>
         <textarea id="koreksi_alasan" name="alasan" class="form-textarea" placeholder="Contoh: Salah input jumlah ekor, yang benar adalah 25 ekor bukan 250 ekor" required minlength="3" maxlength="500"></textarea>
       </div>
 
@@ -400,6 +307,4 @@ window.addEventListener('click', function(e) {
   }
 });
 </script>
-
-</body>
-</html>
+<?php seefish_app_end(); ?>

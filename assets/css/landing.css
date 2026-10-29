@@ -335,6 +335,8 @@ body.landing-body {
   }
 
   .land-float-card-value {
+    font-size: 18px;
+    letter-spacing: 0;
     font-family: 'DM Sans', sans-serif;
     font-size: 18px;
     font-weight: 500;

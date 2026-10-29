@@ -31,6 +31,7 @@ $errorMessage = match ($error) {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="assets/css/vars.css">
 <link rel="stylesheet" href="assets/css/auth.css">
 <link rel="stylesheet" href="assets/css/logo.css">
 </head>
@@ -59,7 +60,7 @@ $errorMessage = match ($error) {
   <form action="process/register_process" method="POST" class="auth-dark-form">
 
     <div>
-      <label class="auth-field-label" for="username">Username</label>
+      <label class="auth-field-label" for="username">Username <span class="req">*</span></label>
       <div class="auth-input-wrap">
         <i class="fa-solid fa-user auth-input-icon"></i>
         <input type="text" id="username" name="user" placeholder="Huruf, angka" autocomplete="username" maxlength="50" required value="<?php echo isset($_GET['user']) ? e((string) $_GET['user']) : ''; ?>">
@@ -67,7 +68,7 @@ $errorMessage = match ($error) {
     </div>
 
     <div>
-      <label class="auth-field-label" for="password">Password</label>
+      <label class="auth-field-label" for="password">Password <span class="req">*</span></label>
       <div class="auth-input-wrap">
         <i class="fa-solid fa-lock auth-input-icon"></i>
         <input type="password" id="password" name="pass" placeholder="Minimal <?php echo e((string) $minimumPassword); ?> karakter" autocomplete="new-password" minlength="<?php echo e((string) $minimumPassword); ?>" maxlength="128" required>
@@ -78,7 +79,7 @@ $errorMessage = match ($error) {
     </div>
 
     <div>
-      <label class="auth-field-label" for="confirm">Konfirmasi Password</label>
+      <label class="auth-field-label" for="confirm">Konfirmasi Password <span class="req">*</span></label>
       <div class="auth-input-wrap">
         <i class="fa-solid fa-lock auth-input-icon"></i>
         <input type="password" id="confirm" name="confirm" placeholder="Ulangi password" autocomplete="new-password" minlength="<?php echo e((string) $minimumPassword); ?>" maxlength="128" required>

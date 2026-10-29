@@ -93,22 +93,22 @@ $totalPelaku = 0;
 
 </div>
 
-<!-- FLOATING INFO CARDS: status fitur (belum ada data produksi) -->
+<!-- FLOATING INFO CARDS: status fitur yang sudah dapat digunakan -->
 <div class="land-float-cards">
   <div class="land-float-card">
     <div class="land-float-card-label">Siklus Budidaya</div>
-    <div class="land-float-card-value">0</div>
-    <span class="land-float-card-tag tag-green">Belum tersedia</span>
+    <div class="land-float-card-value">Siap</div>
+    <span class="land-float-card-tag tag-green">Tersedia</span>
   </div>
   <div class="land-float-card">
     <div class="land-float-card-label">Estimasi Ikan</div>
-    <div class="land-float-card-value">-</div>
-    <span class="land-float-card-tag tag-yellow">Menunggu data</span>
+    <div class="land-float-card-value">Stok & FCR</div>
+    <span class="land-float-card-tag tag-blue">Tersedia</span>
   </div>
   <div class="land-float-card">
-    <div class="land-float-card-label">Pengguna Terdaftar</div>
-    <div class="land-float-card-value"><?php echo e(number_format($totalPelaku)); ?></div>
-    <span class="land-float-card-tag tag-blue">Terdaftar</span>
+    <div class="land-float-card-label">Catatan Operasional</div>
+    <div class="land-float-card-value">Pakan–Panen</div>
+    <span class="land-float-card-tag tag-green">Tersedia</span>
   </div>
 </div>
 

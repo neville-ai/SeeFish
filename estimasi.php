@@ -5,6 +5,7 @@ require_once __DIR__ . '/config/auth.php';
 require_once __DIR__ . '/config/csrf.php';
 require_once __DIR__ . '/config/koneksi.php';
 require_once __DIR__ . '/config/helpers.php';
+require_once __DIR__ . '/config/layout.php';
 
 $username = (string) ($_SESSION['username'] ?? 'Pengguna');
 $userId = (int) $_SESSION['user_id'];
@@ -16,6 +17,7 @@ $totalMatiSemua = 0;
 $totalPanenEkorSemua = 0;
 $totalPanenKgSemua = 0.0;
 $totalPakanKgSemua = 0.0;
+$estimasiOk = true;
 
 try {
     $stmt = $conn->prepare(
@@ -67,114 +69,22 @@ try {
         }
     }
 } catch (Throwable $e) {
+    $estimasiOk = false;
     error_log('Estimasi fetch error: ' . $e->getMessage());
 }
 
-header('X-Content-Type-Options: nosniff');
-header('X-Frame-Options: DENY');
-header('Referrer-Policy: strict-origin-when-cross-origin');
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self';");
+$sfActions = '<a href="ekspor" class="db-btn db-btn-ghost"><i class="fa-solid fa-file-csv"></i> Unduh Rekap CSV</a>';
+seefish_app_start([
+    'nav' => 'estimasi',
+    'title' => 'Estimasi Ikan - SeeFish',
+    'heading' => 'Estimasi Ikan & Efisiensi',
+    'subtitle' => 'Stok ikan hidup, survival rate, dan rasio konversi pakan (FCR) per siklus.',
+    'breadcrumbs' => [['Dashboard', 'dashboard'], ['Estimasi Ikan']],
+    'actions' => $sfActions,
+    'query_ok' => $estimasiOk,
+]);
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Estimasi Ikan - SeeFish</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet" href="assets/css/vars.css">
-<link rel="stylesheet" href="assets/css/dashboard.css">
-<link rel="stylesheet" href="assets/css/logo.css">
-</head>
-<body>
-
-<div class="db-wrap">
-
-  <!-- SIDEBAR -->
-  <aside class="db-sidebar">
-    <div class="db-logo">
-      <span class="seefish-logo-mark seefish-logo-mark--nav">
-        <img src="assets/SeeFish%20Logo.png" alt="SeeFish Logo" class="seefish-logo-img">
-      </span>
-      <span class="db-logo-name">SeeFish</span>
-    </div>
-
-    <div class="db-nav-section">Menu Utama</div>
-    <a href="dashboard" class="db-nav-item">
-      <i class="fa-solid fa-chart-line"></i> Dashboard
-    </a>
-
-    <div class="db-nav-section">Budidaya</div>
-    <a href="kolam" class="db-nav-item">
-      <i class="fa-solid fa-water"></i> Informasi Kolam
-    </a>
-    <a href="siklus" class="db-nav-item">
-      <i class="fa-solid fa-fish-fins"></i> Siklus Budidaya
-    </a>
-
-    <div class="db-nav-section">Operasional</div>
-    <a href="tebar" class="db-nav-item">
-      <i class="fa-solid fa-seedling"></i> Tebar Awal
-    </a>
-    <a href="pakan" class="db-nav-item">
-      <i class="fa-solid fa-bowl-food"></i> Catatan Pakan
-    </a>
-    <a href="mortalitas" class="db-nav-item">
-      <i class="fa-solid fa-skull-crossbones"></i> Catatan Kematian
-    </a>
-    <a href="panen" class="db-nav-item">
-      <i class="fa-solid fa-fish"></i> Catatan Panen
-    </a>
-
-    <div class="db-nav-section">Pelaporan</div>
-    <a href="estimasi" class="db-nav-item active">
-      <i class="fa-solid fa-clock-rotate-left"></i> Estimasi Ikan
-    </a>
-    <a href="riwayat" class="db-nav-item">
-      <i class="fa-solid fa-file-lines"></i> Riwayat & Koreksi
-    </a>
-    <a href="log" class="db-nav-item">
-      <i class="fa-solid fa-clipboard-list"></i> Log Aktivitas
-    </a>
-    <a href="ekspor" class="db-nav-item">
-      <i class="fa-solid fa-file-csv"></i> Ekspor CSV
-    </a>
-
-    <div class="db-sidebar-spacer"></div>
-
-    <div class="db-sidebar-footer">
-      <div class="db-sidebar-uname"><i class="fa-solid fa-user db-user-icon"></i><?php echo e($username); ?></div>
-      <div class="db-sidebar-role"><?php echo e($userRole); ?></div>
-    </div>
-
-    <form method="POST" action="logout" class="logout-form">
-      <?php csrf_input(); ?>
-      <button type="submit" class="db-nav-item logout-btn">
-        <i class="fa-solid fa-right-from-bracket"></i> Logout
-      </button>
-    </form>
-  </aside>
-
-  <!-- MAIN CONTENT -->
-  <main class="db-main">
-
-    <!-- TOPBAR -->
-    <header class="db-topbar">
-      <div>
-        <h1 class="db-page-title">Estimasi Ikan & Efisiensi Budidaya</h1>
-        <p class="db-page-sub">Perhitungan stok ikan hidup real-time, survival rate, dan rasio konversi pakan (FCR) per siklus.</p>
-      </div>
-      <div>
-        <a href="ekspor?tipe=siklus" class="btn btn-secondary">
-          <i class="fa-solid fa-file-csv"></i> Unduh Rekap CSV
-        </a>
-      </div>
-    </header>
-
-    <div class="db-content">
+<div class="db-content">
 
       <!-- FORMULA INFO -->
       <div class="formula-card">
@@ -192,7 +102,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       <!-- METRIC CARDS -->
       <div class="db-stats">
         <div class="stat-card">
-          <div class="stat-icon" style="background:#DCFCE7;color:#166534;">
+          <div class="stat-icon ic-success">
             <i class="fa-solid fa-fish"></i>
           </div>
           <div>
@@ -202,7 +112,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon" style="background:#FEE2E2;color:#991B1B;">
+          <div class="stat-icon ic-danger">
             <i class="fa-solid fa-skull-crossbones"></i>
           </div>
           <div>
@@ -212,7 +122,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon" style="background:#EFF6FF;color:#2563EB;">
+          <div class="stat-icon ic-primary">
             <i class="fa-solid fa-scale-balanced"></i>
           </div>
           <div>
@@ -222,7 +132,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon" style="background:#FEF3C7;color:#D97706;">
+          <div class="stat-icon ic-warning">
             <i class="fa-solid fa-bowl-food"></i>
           </div>
           <div>
@@ -328,8 +238,4 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       </div>
 
     </div>
-  </main>
-</div>
-
-</body>
-</html>
+<?php seefish_app_end(); ?>

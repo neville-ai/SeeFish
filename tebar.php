@@ -5,6 +5,7 @@ require_once __DIR__ . '/config/auth.php';
 require_once __DIR__ . '/config/csrf.php';
 require_once __DIR__ . '/config/koneksi.php';
 require_once __DIR__ . '/config/helpers.php';
+require_once __DIR__ . '/config/layout.php';
 
 $username = (string) ($_SESSION['username'] ?? 'Pengguna');
 $userId = (int) $_SESSION['user_id'];
@@ -16,6 +17,7 @@ $speciesList = [];
 $totalTebarAll = 0;
 $totalTebarActive = 0;
 $totalActiveCycles = 0;
+$tebarOk = true;
 
 try {
     // 1. Ambil seluruh riwayat tebar awal (siklus budidaya) milik user
@@ -66,165 +68,22 @@ try {
         $res->free();
     }
 } catch (Throwable $e) {
+    $tebarOk = false;
     error_log('Tebar fetch error: ' . $e->getMessage());
 }
 
-header('X-Content-Type-Options: nosniff');
-header('X-Frame-Options: DENY');
-header('Referrer-Policy: strict-origin-when-cross-origin');
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self';");
+$sfActions = '';
+seefish_app_start([
+    'nav' => 'tebar',
+    'title' => 'Tebar Awal - SeeFish',
+    'heading' => 'Tebar Awal',
+    'subtitle' => 'Pencatatan penebaran benih ikan awal saat pembukaan siklus budidaya',
+    'breadcrumbs' => [['Dashboard', 'dashboard'], ['Tebar Awal']],
+    'actions' => $sfActions,
+    'query_ok' => $tebarOk,
+]);
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tebar Awal - SeeFish</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet" href="assets/css/vars.css">
-<link rel="stylesheet" href="assets/css/dashboard.css">
-<link rel="stylesheet" href="assets/css/logo.css">
-<style>
-.badge-status {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: var(--radius-pill);
-  font-size: 11px;
-  font-weight: 600;
-}
-.badge-berjalan { background: var(--primary-light); color: var(--primary-dark); border: 1px solid var(--border); }
-.badge-selesai { background: var(--success-soft); color: var(--success); border: 1px solid var(--success-border); }
-.form-grid-tebar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-  align-items: flex-end;
-}
-.select-input {
-  width: 100%;
-  padding: 9px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: #FFFFFF;
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: 13px;
-}
-.select-input:focus {
-  border-color: var(--primary);
-  outline: none;
-  box-shadow: var(--focus-ring);
-}
-.alert-empty-pond {
-  background: #FFFFFF;
-  border: 1px solid var(--border-subtle);
-  border-left: 4px solid var(--primary);
-  border-radius: var(--radius-sm);
-  padding: 14px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-</style>
-</head>
-<body>
-
-<div class="db-wrap">
-
-  <!-- SIDEBAR -->
-  <aside class="db-sidebar">
-    <div class="db-logo">
-      <span class="seefish-logo-mark seefish-logo-mark--nav">
-        <img src="assets/SeeFish%20Logo.png" alt="SeeFish Logo" class="seefish-logo-img">
-      </span>
-      <span class="db-logo-name">SeeFish</span>
-    </div>
-
-    <div class="db-nav-section">Menu Utama</div>
-    <a href="dashboard" class="db-nav-item">
-      <i class="fa-solid fa-chart-line"></i> Dashboard
-    </a>
-
-    <div class="db-nav-section">Budidaya</div>
-    <a href="kolam" class="db-nav-item">
-      <i class="fa-solid fa-water"></i> Informasi Kolam
-    </a>
-    <a href="siklus" class="db-nav-item">
-      <i class="fa-solid fa-fish-fins"></i> Siklus Budidaya
-    </a>
-
-    <div class="db-nav-section">Operasional</div>
-    <a href="tebar" class="db-nav-item active">
-      <i class="fa-solid fa-seedling"></i> Tebar Awal
-    </a>
-    <a href="pakan" class="db-nav-item">
-      <i class="fa-solid fa-bowl-food"></i> Catatan Pakan
-    </a>
-    <a href="mortalitas" class="db-nav-item">
-      <i class="fa-solid fa-skull-crossbones"></i> Catatan Kematian
-    </a>
-    <a href="panen" class="db-nav-item">
-      <i class="fa-solid fa-fish"></i> Catatan Panen
-    </a>
-
-    <div class="db-nav-section">Pelaporan</div>
-    <a href="estimasi" class="db-nav-item">
-      <i class="fa-solid fa-clock-rotate-left"></i> Estimasi Ikan
-    </a>
-    <a href="riwayat" class="db-nav-item">
-      <i class="fa-solid fa-file-lines"></i> Riwayat & Koreksi
-    </a>
-    <a href="log" class="db-nav-item">
-      <i class="fa-solid fa-clipboard-list"></i> Log Aktivitas
-    </a>
-    <a href="ekspor" class="db-nav-item">
-      <i class="fa-solid fa-file-csv"></i> Ekspor CSV
-    </a>
-
-    <div class="db-sidebar-spacer"></div>
-
-    <div class="db-sidebar-footer">
-      <div class="db-sidebar-uname"><i class="fa-solid fa-user db-user-icon"></i><?php echo e($username); ?></div>
-      <div class="db-sidebar-role"><?php echo e($userRole); ?></div>
-    </div>
-
-    <form method="POST" action="logout" class="logout-form">
-      <?php csrf_input(); ?>
-      <button type="submit" class="db-nav-item logout-btn">
-        <i class="fa-solid fa-right-from-bracket"></i> Logout
-      </button>
-    </form>
-  </aside>
-
-  <!-- MAIN -->
-  <main class="db-main">
-
-    <!-- TOPBAR -->
-    <div class="db-topbar">
-      <div>
-        <h1>Tebar Awal</h1>
-        <p>Pencatatan penebaran benih ikan awal saat pembukaan siklus budidaya</p>
-      </div>
-      <div class="topbar-flex">
-        <div class="db-live-badge">
-          <span class="db-dot"></span>
-          <?php echo e($username); ?>
-        </div>
-        <form method="POST" action="logout" class="logout-form logout-form-mobile">
-          <?php csrf_input(); ?>
-          <button type="submit" class="db-btn db-btn-ghost db-logout-mobile" aria-label="Logout">
-            <i class="fa-solid fa-right-from-bracket"></i>
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- NOTIFIKASI -->
+<!-- NOTIFIKASI -->
     <?php if (isset($_GET['success']) && $_GET['success'] === 'added'): ?>
       <div class="db-notif db-notif-ok"><i class="fa-solid fa-check"></i> Tebar awal dan pembukaan siklus berhasil disimpan.</div>
     <?php elseif (isset($_GET['error'])): ?>
@@ -292,7 +151,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
         <form method="POST" action="process/tambah_siklus" class="form-grid-tebar">
           <?php csrf_input(); ?>
           <div class="db-field">
-            <label for="kolam_id">Kolam Tujuan *</label>
+            <label for="kolam_id">Kolam Tujuan <span class="req">*</span></label>
             <select id="kolam_id" name="kolam_id" class="select-input" required>
               <option value="">-- Pilih Kolam --</option>
               <?php foreach ($availablePonds as $p): ?>
@@ -302,7 +161,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
           </div>
 
           <div class="db-field">
-            <label for="jenis_ikan_id">Komoditas / Ikan *</label>
+            <label for="jenis_ikan_id">Komoditas / Ikan <span class="req">*</span></label>
             <select id="jenis_ikan_id" name="jenis_ikan_id" class="select-input" required>
               <option value="">-- Pilih Jenis Ikan --</option>
               <?php foreach ($speciesList as $s): ?>
@@ -312,12 +171,12 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
           </div>
 
           <div class="db-field" style="max-width: 140px;">
-            <label for="tanggal_mulai">Tgl Tebar *</label>
+            <label for="tanggal_mulai">Tanggal Tebar <span class="req">*</span></label>
             <input type="date" id="tanggal_mulai" name="tanggal_mulai" value="<?php echo date('Y-m-d'); ?>" required>
           </div>
 
           <div class="db-field" style="max-width: 150px;">
-            <label for="jumlah_tebar">Jumlah Tebar (ekor) *</label>
+            <label for="jumlah_tebar">Jumlah Tebar (ekor) <span class="req">*</span></label>
             <input type="number" min="1" max="10000000" id="jumlah_tebar" name="jumlah_tebar" placeholder="Contoh: 1000" required>
           </div>
 
@@ -398,10 +257,4 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
         </div>
       <?php endif; ?>
     </div>
-
-  </main>
-</div>
-
-<script src="assets/js/dashboard.js"></script>
-</body>
-</html>
+<?php seefish_app_end(); ?>

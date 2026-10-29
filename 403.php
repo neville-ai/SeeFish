@@ -37,7 +37,7 @@ $username = $_SESSION['username'] ?? null; // tetap null kalau belum login
 
     <div class="error-actions">
       <?php if($username): ?>
-        <a href="dashboard.php" class="error-btn primary">
+        <a href="dashboard" class="error-btn primary">
           <i class="fa-solid fa-chart-line"></i> Kembali ke Dashboard
         </a>
       <?php else: ?>

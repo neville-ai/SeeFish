@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/config/auth.php';
 require_once __DIR__ . '/config/csrf.php';
 require_once __DIR__ . '/config/koneksi.php';
+require_once __DIR__ . '/config/layout.php';
 
 $username = (string) ($_SESSION['username'] ?? 'Pengguna');
 $userId = (int) $_SESSION['user_id'];
@@ -17,6 +18,7 @@ $totalPemberian = 0;
 $siklusAktifCount = 0;
 $totalJadwalMenunggu = 0;
 $totalJadwalTerlaksana = 0;
+$pakanOk = true;
 
 $filterStatus = (string) ($_GET['filter'] ?? 'semua');
 $allowedFilters = ['semua', 'hari_ini', 'mendatang', 'terlambat', 'terlaksana', 'dibatalkan'];
@@ -118,6 +120,7 @@ try {
         $totalPakanKg += (float) $log['jumlah_kg'];
     }
 } catch (Throwable $e) {
+    $pakanOk = false;
     error_log('Pakan & jadwal fetch error: ' . $e->getMessage());
 }
 
@@ -146,120 +149,25 @@ $successMessage = match ($successParam) {
     default => ''
 };
 
-header('X-Content-Type-Options: nosniff');
-header('X-Frame-Options: DENY');
-header('Referrer-Policy: strict-origin-when-cross-origin');
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self';");
+ob_start();
+if ($siklusAktifCount > 0) {
+    echo '<button type="button" class="db-btn db-btn-primary" onclick="openAddScheduleModal()"><i class="fa-solid fa-calendar-plus"></i> Buat Jadwal Pakan</button> ';
+    echo '<button type="button" class="db-btn db-btn-ghost" onclick="openAddFeedModal()"><i class="fa-solid fa-plus"></i> Catat Pakan Langsung</button>';
+} else {
+    echo '<a href="siklus" class="db-btn db-btn-ghost"><i class="fa-solid fa-fish-fins"></i> Buka Siklus Dulu</a>';
+}
+$sfActions = ob_get_clean();
+seefish_app_start([
+    'nav' => 'pakan',
+    'title' => 'Jadwal & Catatan Pakan - SeeFish',
+    'heading' => 'Jadwal & Catatan Pakan',
+    'subtitle' => 'Kelola perencanaan waktu pakan dan pantau realisasi konsumsi pakan.',
+    'breadcrumbs' => [['Dashboard', 'dashboard'], ['Jadwal & Pakan']],
+    'actions' => $sfActions,
+    'query_ok' => $pakanOk,
+]);
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jadwal & Catatan Pakan - SeeFish</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet" href="assets/css/vars.css">
-<link rel="stylesheet" href="assets/css/dashboard.css">
-<link rel="stylesheet" href="assets/css/logo.css">
-</head>
-<body>
-
-<div class="db-wrap">
-
-  <!-- SIDEBAR -->
-  <aside class="db-sidebar">
-    <div class="db-logo">
-      <span class="seefish-logo-mark seefish-logo-mark--nav">
-        <img src="assets/SeeFish%20Logo.png" alt="SeeFish Logo" class="seefish-logo-img">
-      </span>
-      <span class="db-logo-name">SeeFish</span>
-    </div>
-
-    <div class="db-nav-section">Menu Utama</div>
-    <a href="dashboard" class="db-nav-item">
-      <i class="fa-solid fa-chart-line"></i> Dashboard
-    </a>
-
-    <div class="db-nav-section">Budidaya</div>
-    <a href="kolam" class="db-nav-item">
-      <i class="fa-solid fa-water"></i> Informasi Kolam
-    </a>
-    <a href="siklus" class="db-nav-item">
-      <i class="fa-solid fa-fish-fins"></i> Siklus Budidaya
-    </a>
-
-    <div class="db-nav-section">Operasional</div>
-    <a href="tebar" class="db-nav-item">
-      <i class="fa-solid fa-seedling"></i> Tebar Awal
-    </a>
-    <a href="pakan" class="db-nav-item active">
-      <i class="fa-solid fa-bowl-food"></i> Catatan Pakan
-    </a>
-    <a href="mortalitas" class="db-nav-item">
-      <i class="fa-solid fa-skull-crossbones"></i> Catatan Kematian
-    </a>
-    <a href="panen" class="db-nav-item">
-      <i class="fa-solid fa-fish"></i> Catatan Panen
-    </a>
-
-    <div class="db-nav-section">Pelaporan</div>
-    <a href="estimasi" class="db-nav-item">
-      <i class="fa-solid fa-clock-rotate-left"></i> Estimasi Ikan
-    </a>
-    <a href="riwayat" class="db-nav-item">
-      <i class="fa-solid fa-file-lines"></i> Riwayat & Koreksi
-    </a>
-    <a href="log" class="db-nav-item">
-      <i class="fa-solid fa-clipboard-list"></i> Log Aktivitas
-    </a>
-    <a href="ekspor" class="db-nav-item">
-      <i class="fa-solid fa-file-csv"></i> Ekspor CSV
-    </a>
-
-    <div class="db-sidebar-spacer"></div>
-
-    <div class="db-sidebar-footer">
-      <div class="db-sidebar-uname"><i class="fa-solid fa-user db-user-icon"></i><?php echo e($username); ?></div>
-      <div class="db-sidebar-role"><?php echo e($userRole); ?></div>
-    </div>
-
-    <form method="POST" action="logout" class="logout-form">
-      <?php csrf_input(); ?>
-      <button type="submit" class="db-nav-item logout-btn">
-        <i class="fa-solid fa-right-from-bracket"></i> Logout
-      </button>
-    </form>
-  </aside>
-
-  <!-- MAIN CONTENT -->
-  <main class="db-main">
-
-    <!-- TOPBAR -->
-    <header class="db-topbar">
-      <div>
-        <h1 class="db-page-title">Jadwal & Catatan Pakan</h1>
-        <p class="db-page-sub">Kelola perencanaan waktu pakan dan pantau realisasi konsumsi pakan ikan secara terpisah.</p>
-      </div>
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <?php if ($siklusAktifCount > 0): ?>
-          <button type="button" class="btn btn-primary" onclick="openAddScheduleModal()">
-            <i class="fa-solid fa-calendar-plus"></i> Buat Jadwal Pakan
-          </button>
-          <button type="button" class="btn btn-secondary" onclick="openAddFeedModal()">
-            <i class="fa-solid fa-plus"></i> Catat Pakan Langsung
-          </button>
-        <?php else: ?>
-          <a href="siklus" class="btn btn-secondary" title="Buka siklus budidaya aktif terlebih dahulu">
-            <i class="fa-solid fa-fish-fins"></i> Buka Siklus Dulu
-          </a>
-        <?php endif; ?>
-      </div>
-    </header>
-
-    <div class="db-content">
+<div class="db-content">
 
       <?php if ($successMessage !== ''): ?>
         <div class="alert-box alert-success">
@@ -278,7 +186,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       <!-- METRIC CARDS -->
       <div class="db-stats">
         <div class="stat-card">
-          <div class="stat-icon" style="background:#FEF3C7;color:#D97706;">
+          <div class="stat-icon ic-warning">
             <i class="fa-solid fa-bowl-food"></i>
           </div>
           <div>
@@ -288,7 +196,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon" style="background:#EFF6FF;color:#2563EB;">
+          <div class="stat-icon ic-primary">
             <i class="fa-solid fa-calendar-day"></i>
           </div>
           <div>
@@ -298,7 +206,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon" style="background:#DCFCE7;color:#166534;">
+          <div class="stat-icon ic-success">
             <i class="fa-solid fa-circle-check"></i>
           </div>
           <div>
@@ -308,7 +216,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon" style="background:#F0FDF4;color:#15803D;">
+          <div class="stat-icon ic-g">
             <i class="fa-solid fa-water"></i>
           </div>
           <div>
@@ -518,9 +426,6 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       </div>
 
     </div>
-  </main>
-</div>
-
 <!-- MODAL 1: BUAT JADWAL PAKAN -->
 <div id="addScheduleModal" class="modal-overlay">
   <div class="modal-box">
@@ -532,7 +437,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       <?php csrf_input(); ?>
 
       <div class="form-group">
-        <label class="form-label" for="sch_siklus_id">Siklus Budidaya Aktif *</label>
+        <label class="form-label" for="sch_siklus_id">Siklus Budidaya Aktif <span class="req">*</span></label>
         <select id="sch_siklus_id" name="siklus_id" class="form-select" required>
           <option value="">-- Pilih Kolam & Siklus --</option>
           <?php foreach ($activeCycles as $ac): ?>
@@ -545,22 +450,22 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
 
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label" for="sch_tanggal_rencana">Tanggal Rencana *</label>
+          <label class="form-label" for="sch_tanggal_rencana">Tanggal Rencana <span class="req">*</span></label>
           <input type="date" id="sch_tanggal_rencana" name="tanggal_rencana" class="form-input" value="<?php echo date('Y-m-d'); ?>" required>
         </div>
         <div class="form-group">
-          <label class="form-label" for="sch_waktu_rencana">Jam Pemberian (WIB) *</label>
+          <label class="form-label" for="sch_waktu_rencana">Jam Pemberian (WIB) <span class="req">*</span></label>
           <input type="time" id="sch_waktu_rencana" name="waktu_rencana" class="form-input" value="08:00" required>
         </div>
       </div>
 
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label" for="sch_nama_pakan">Merek / Jenis Pakan *</label>
+          <label class="form-label" for="sch_nama_pakan">Merek / Jenis Pakan <span class="req">*</span></label>
           <input type="text" id="sch_nama_pakan" name="nama_pakan" class="form-input" maxlength="100" placeholder="Contoh: Pellet PF-1000" required>
         </div>
         <div class="form-group">
-          <label class="form-label" for="sch_jumlah_kg_rencana">Target Pakan (kg) *</label>
+          <label class="form-label" for="sch_jumlah_kg_rencana">Target Pakan (kg) <span class="req">*</span></label>
           <input type="number" id="sch_jumlah_kg_rencana" name="jumlah_kg_rencana" class="form-input" step="0.01" min="0.01" max="999999.99" placeholder="Contoh: 5.00" required>
         </div>
       </div>
@@ -593,11 +498,11 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
 
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label" for="exec_tanggal_aktual">Tanggal Aktual Pemberian *</label>
+          <label class="form-label" for="exec_tanggal_aktual">Tanggal Aktual Pemberian <span class="req">*</span></label>
           <input type="date" id="exec_tanggal_aktual" name="tanggal_aktual" class="form-input" value="<?php echo date('Y-m-d'); ?>" required>
         </div>
         <div class="form-group">
-          <label class="form-label" for="exec_jumlah_kg_aktual">Jumlah Pakan Nyata (kg) *</label>
+          <label class="form-label" for="exec_jumlah_kg_aktual">Jumlah Pakan Nyata (kg) <span class="req">*</span></label>
           <input type="number" id="exec_jumlah_kg_aktual" name="jumlah_kg_aktual" class="form-input" step="0.01" min="0.01" max="999999.99" required>
         </div>
       </div>
@@ -619,7 +524,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
 <div id="cancelScheduleModal" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-head">
-      <h3 class="modal-title"><i class="fa-solid fa-ban" style="color:var(--error);margin-right:8px;"></i>Batalkan Jadwal Pakan</h3>
+      <h3 class="modal-title"><i class="fa-solid fa-ban" style="color:var(--danger);margin-right:8px;"></i>Batalkan Jadwal Pakan</h3>
       <button type="button" class="modal-close" onclick="closeCancelScheduleModal()">&times;</button>
     </div>
     <form method="POST" action="process/batal_jadwal_pakan.php">
@@ -629,13 +534,13 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       <p id="cancel_info" style="font-size: 13px; color: var(--text-dim); margin-bottom: 14px;"></p>
 
       <div class="form-group">
-        <label class="form-label" for="cancel_alasan">Alasan Pembatalan *</label>
+        <label class="form-label" for="cancel_alasan">Alasan Pembatalan <span class="req">*</span></label>
         <textarea id="cancel_alasan" name="alasan_batal" class="form-textarea" maxlength="500" placeholder="Contoh: Hujan lebat disertai petir / ikan sedang dipuasakan..." required></textarea>
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
         <button type="button" class="btn btn-secondary" onclick="closeCancelScheduleModal()">Tutup</button>
-        <button type="submit" class="btn btn-primary" style="background:var(--error);border-color:var(--error);"><i class="fa-solid fa-ban"></i> Batalkan Jadwal</button>
+        <button type="submit" class="btn btn-primary" style="background:var(--danger);border-color:var(--danger);"><i class="fa-solid fa-ban"></i> Batalkan Jadwal</button>
       </div>
     </form>
   </div>
@@ -652,7 +557,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       <?php csrf_input(); ?>
 
       <div class="form-group">
-        <label class="form-label" for="feed_siklus_id">Pilih Siklus Budidaya Aktif *</label>
+        <label class="form-label" for="feed_siklus_id">Pilih Siklus Budidaya Aktif <span class="req">*</span></label>
         <select id="feed_siklus_id" name="siklus_id" class="form-select" required>
           <option value="">-- Pilih Kolam & Siklus Berjalan --</option>
           <?php foreach ($activeCycles as $ac): ?>
@@ -665,11 +570,11 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
 
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label" for="feed_tanggal">Tanggal Pemberian *</label>
+          <label class="form-label" for="feed_tanggal">Tanggal Pemberian <span class="req">*</span></label>
           <input type="date" id="feed_tanggal" name="tanggal" class="form-input" value="<?php echo date('Y-m-d'); ?>" required>
         </div>
         <div class="form-group">
-          <label class="form-label" for="feed_jumlah_kg">Jumlah Pakan (kg) *</label>
+          <label class="form-label" for="feed_jumlah_kg">Jumlah Pakan (kg) <span class="req">*</span></label>
           <input type="number" id="feed_jumlah_kg" name="jumlah_kg" class="form-input" step="0.01" min="0.01" max="999999.99" placeholder="Contoh: 5.50" required>
         </div>
       </div>
@@ -735,6 +640,4 @@ window.addEventListener('click', function(e) {
   });
 });
 </script>
-
-</body>
-</html>
+<?php seefish_app_end(); ?>

@@ -16,6 +16,7 @@ $error = isset($_GET['error']) && is_string($_GET['error']) ? $_GET['error'] : '
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="assets/css/vars.css">
 <link rel="stylesheet" href="assets/css/auth.css">
 <link rel="stylesheet" href="assets/css/logo.css">
 </head>
@@ -52,7 +53,7 @@ $error = isset($_GET['error']) && is_string($_GET['error']) ? $_GET['error'] : '
   <form action="process/login_process" method="POST" class="auth-dark-form">
 
     <div>
-      <label class="auth-field-label" for="login_user">Username</label>
+      <label class="auth-field-label" for="login_user">Username <span class="req">*</span></label>
       <div class="auth-input-wrap">
         <i class="fa-solid fa-user auth-input-icon"></i>
         <input type="text" id="login_user" name="user" placeholder="Masukkan username" autocomplete="username" maxlength="50" required>
@@ -60,7 +61,7 @@ $error = isset($_GET['error']) && is_string($_GET['error']) ? $_GET['error'] : '
     </div>
 
     <div>
-      <label class="auth-field-label" for="password">Password</label>
+      <label class="auth-field-label" for="password">Password <span class="req">*</span></label>
       <div class="auth-input-wrap">
         <i class="fa-solid fa-lock auth-input-icon"></i>
         <input type="password" id="password" name="pass" placeholder="Masukkan password" autocomplete="current-password" maxlength="128" required>

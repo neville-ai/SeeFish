@@ -5,6 +5,7 @@ require_once __DIR__ . '/config/auth.php';
 require_once __DIR__ . '/config/csrf.php';
 require_once __DIR__ . '/config/koneksi.php';
 require_once __DIR__ . '/config/helpers.php';
+require_once __DIR__ . '/config/layout.php';
 
 $username = (string) ($_SESSION['username'] ?? 'Pengguna');
 $userId = (int) $_SESSION['user_id'];
@@ -22,6 +23,7 @@ $totalAllSisaIkan = 0;
 $filterSiklus = isset($_GET['siklus_id']) && $_GET['siklus_id'] !== '' ? (int) $_GET['siklus_id'] : null;
 $dariTanggal = isset($_GET['dari_tanggal']) && is_string($_GET['dari_tanggal']) ? trim($_GET['dari_tanggal']) : '';
 $sampaiTanggal = isset($_GET['sampai_tanggal']) && is_string($_GET['sampai_tanggal']) ? trim($_GET['sampai_tanggal']) : '';
+$eksporOk = true;
 
 try {
     // 1. Ambil daftar siklus milik pengguna untuk opsi dropdown
@@ -114,215 +116,22 @@ try {
         $stmtReport->close();
     }
 } catch (Throwable $e) {
+    $eksporOk = false;
     error_log('Ekspor cycles fetch error: ' . $e->getMessage());
 }
 
-header('X-Content-Type-Options: nosniff');
-header('X-Frame-Options: DENY');
-header('Referrer-Policy: strict-origin-when-cross-origin');
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self';");
+$sfActions = '';
+seefish_app_start([
+    'nav' => 'ekspor',
+    'title' => 'Ekspor CSV - SeeFish',
+    'heading' => 'Pelaporan & Ekspor CSV',
+    'subtitle' => 'Laporan per siklus dan unduhan spreadsheet yang aman.',
+    'breadcrumbs' => [['Dashboard', 'dashboard'], ['Ekspor CSV']],
+    'actions' => $sfActions,
+    'query_ok' => $eksporOk,
+]);
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pelaporan & Ekspor CSV - SeeFish</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet" href="assets/css/vars.css">
-<link rel="stylesheet" href="assets/css/dashboard.css">
-<link rel="stylesheet" href="assets/css/logo.css">
-<style>
-.filter-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 18px 20px;
-  margin-bottom: 24px;
-}
-.filter-form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) auto;
-  gap: 16px;
-  align-items: flex-end;
-}
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.filter-group label {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-muted);
-}
-.filter-input {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  font-family: inherit;
-  font-size: 14px;
-  color: var(--text);
-  box-sizing: border-box;
-}
-.filter-input:focus {
-  outline: none;
-  border-color: var(--primary);
-}
-.report-summary-bar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
-}
-.summary-mini-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  border-left: 3px solid var(--primary);
-}
-.summary-mini-card small {
-  display: block;
-  font-size: 11px;
-  color: var(--text-faint);
-  text-transform: uppercase;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-.summary-mini-card strong {
-  font-size: 18px;
-  color: var(--text);
-}
-.export-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 18px;
-  margin-top: 24px;
-}
-.export-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  box-shadow: var(--shadow-sm);
-}
-.export-card:hover {
-  border-color: var(--primary);
-}
-.export-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  margin-bottom: 14px;
-}
-.export-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: var(--text);
-}
-.export-desc {
-  font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.5;
-  margin-bottom: 18px;
-}
-</style>
-</head>
-<body>
-
-<div class="db-wrap">
-
-  <!-- SIDEBAR -->
-  <aside class="db-sidebar">
-    <div class="db-logo">
-      <span class="seefish-logo-mark seefish-logo-mark--nav">
-        <img src="assets/SeeFish%20Logo.png" alt="SeeFish Logo" class="seefish-logo-img">
-      </span>
-      <span class="db-logo-name">SeeFish</span>
-    </div>
-
-    <div class="db-nav-section">Menu Utama</div>
-    <a href="dashboard" class="db-nav-item">
-      <i class="fa-solid fa-chart-line"></i> Dashboard
-    </a>
-
-    <div class="db-nav-section">Budidaya</div>
-    <a href="kolam" class="db-nav-item">
-      <i class="fa-solid fa-water"></i> Informasi Kolam
-    </a>
-    <a href="siklus" class="db-nav-item">
-      <i class="fa-solid fa-fish-fins"></i> Siklus Budidaya
-    </a>
-
-    <div class="db-nav-section">Operasional</div>
-    <a href="tebar" class="db-nav-item">
-      <i class="fa-solid fa-seedling"></i> Tebar Awal
-    </a>
-    <a href="pakan" class="db-nav-item">
-      <i class="fa-solid fa-bowl-food"></i> Catatan Pakan
-    </a>
-    <a href="mortalitas" class="db-nav-item">
-      <i class="fa-solid fa-skull-crossbones"></i> Catatan Kematian
-    </a>
-    <a href="panen" class="db-nav-item">
-      <i class="fa-solid fa-fish"></i> Catatan Panen
-    </a>
-
-    <div class="db-nav-section">Pelaporan</div>
-    <a href="estimasi" class="db-nav-item">
-      <i class="fa-solid fa-clock-rotate-left"></i> Estimasi Ikan
-    </a>
-    <a href="riwayat" class="db-nav-item">
-      <i class="fa-solid fa-file-lines"></i> Riwayat & Koreksi
-    </a>
-    <a href="log" class="db-nav-item">
-      <i class="fa-solid fa-clipboard-list"></i> Log Aktivitas
-    </a>
-    <a href="ekspor" class="db-nav-item active">
-      <i class="fa-solid fa-file-csv"></i> Ekspor CSV
-    </a>
-
-    <div class="db-sidebar-spacer"></div>
-
-    <div class="db-sidebar-footer">
-      <div class="db-sidebar-uname"><i class="fa-solid fa-user db-user-icon"></i><?php echo e($username); ?></div>
-      <div class="db-sidebar-role"><?php echo e($userRole); ?></div>
-    </div>
-
-    <form method="POST" action="logout" class="logout-form">
-      <?php csrf_input(); ?>
-      <button type="submit" class="db-nav-item logout-btn">
-        <i class="fa-solid fa-right-from-bracket"></i> Logout
-      </button>
-    </form>
-  </aside>
-
-  <!-- MAIN CONTENT -->
-  <main class="db-main">
-
-    <!-- TOPBAR -->
-    <header class="db-topbar">
-      <div>
-        <h1 class="db-page-title">Pelaporan & Ekspor CSV</h1>
-        <p class="db-page-sub">Laporan analitik per siklus, transparansi estimasi stok, dan ekspor spreadsheet terstandarisasi aman.</p>
-      </div>
-    </header>
-
-    <div class="db-content">
+<div class="db-content">
 
       <!-- FILTER BOX -->
       <div class="filter-card">
@@ -541,9 +350,6 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       </div>
 
     </div>
-  </main>
-</div>
-
 <script>
 function updateDownloadLinks() {
   var sid = document.getElementById('filterSiklusSelect').value;
@@ -563,6 +369,4 @@ function updateDownloadLinks() {
 // Jalankan saat pertama kali halaman dimuat untuk menyelaraskan nilai URL filter awal
 document.addEventListener('DOMContentLoaded', updateDownloadLinks);
 </script>
-
-</body>
-</html>
+<?php seefish_app_end(); ?>

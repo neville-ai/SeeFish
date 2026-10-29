@@ -5,6 +5,7 @@ require_once __DIR__ . '/config/auth.php';
 require_once __DIR__ . '/config/csrf.php';
 require_once __DIR__ . '/config/koneksi.php';
 require_once __DIR__ . '/config/helpers.php';
+require_once __DIR__ . '/config/layout.php';
 
 $username = (string) ($_SESSION['username'] ?? 'Pengguna');
 $userId = (int) $_SESSION['user_id'];
@@ -20,6 +21,7 @@ $totalPanenKg = 0.0;
 $totalPanenEkor = 0;
 $recentPonds = [];
 $recentActivities = [];
+$dashboardOk = true;
 
 try {
     // 1. Total Kolam
@@ -134,156 +136,22 @@ try {
         $stmt->close();
     }
 } catch (Throwable $e) {
+    $dashboardOk = false;
     error_log('Dashboard data query error: ' . $e->getMessage());
 }
 
-header('X-Content-Type-Options: nosniff');
-header('X-Frame-Options: DENY');
-header('Referrer-Policy: strict-origin-when-cross-origin');
-header("Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self';");
+$sfActions = '';
+seefish_app_start([
+    'nav' => 'dashboard',
+    'title' => 'Dashboard - SeeFish',
+    'heading' => 'Dashboard Budidaya',
+    'subtitle' => date('l, d F Y'),
+    'breadcrumbs' => [['Dashboard']],
+    'actions' => $sfActions,
+    'query_ok' => $dashboardOk,
+]);
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard - SeeFish</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet" href="assets/css/vars.css">
-<link rel="stylesheet" href="assets/css/dashboard.css">
-<link rel="stylesheet" href="assets/css/logo.css">
-<style>
-.db-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-.activity-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.activity-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-}
-.activity-badge {
-  font-family: var(--font-mono, monospace);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 4px;
-  background: #F1F5F9;
-  color: #334155;
-  border: 1px solid #CBD5E1;
-  display: inline-block;
-  margin-right: 8px;
-}
-</style>
-</head>
-<body>
-
-<div class="db-wrap">
-
-  <!-- SIDEBAR -->
-  <aside class="db-sidebar">
-    <div class="db-logo">
-      <span class="seefish-logo-mark seefish-logo-mark--nav">
-        <img src="assets/SeeFish%20Logo.png" alt="SeeFish Logo" class="seefish-logo-img">
-      </span>
-      <span class="db-logo-name">SeeFish</span>
-    </div>
-
-    <div class="db-nav-section">Menu Utama</div>
-    <a href="dashboard" class="db-nav-item active">
-      <i class="fa-solid fa-chart-line"></i> Dashboard
-    </a>
-
-    <div class="db-nav-section">Budidaya</div>
-    <a href="kolam" class="db-nav-item">
-      <i class="fa-solid fa-water"></i> Informasi Kolam
-    </a>
-    <a href="siklus" class="db-nav-item">
-      <i class="fa-solid fa-fish-fins"></i> Siklus Budidaya
-    </a>
-
-    <div class="db-nav-section">Operasional</div>
-    <a href="tebar" class="db-nav-item">
-      <i class="fa-solid fa-seedling"></i> Tebar Awal
-    </a>
-    <a href="pakan" class="db-nav-item">
-      <i class="fa-solid fa-bowl-food"></i> Catatan Pakan
-    </a>
-    <a href="mortalitas" class="db-nav-item">
-      <i class="fa-solid fa-skull-crossbones"></i> Catatan Kematian
-    </a>
-    <a href="panen" class="db-nav-item">
-      <i class="fa-solid fa-fish"></i> Catatan Panen
-    </a>
-
-    <div class="db-nav-section">Pelaporan</div>
-    <a href="estimasi" class="db-nav-item">
-      <i class="fa-solid fa-clock-rotate-left"></i> Estimasi Ikan
-    </a>
-    <a href="riwayat" class="db-nav-item">
-      <i class="fa-solid fa-file-lines"></i> Riwayat & Koreksi
-    </a>
-    <a href="log" class="db-nav-item">
-      <i class="fa-solid fa-clipboard-list"></i> Log Aktivitas
-    </a>
-    <a href="ekspor" class="db-nav-item">
-      <i class="fa-solid fa-file-csv"></i> Ekspor CSV
-    </a>
-
-    <div class="db-sidebar-spacer"></div>
-
-    <div class="db-sidebar-footer">
-      <div class="db-sidebar-uname"><i class="fa-solid fa-user db-user-icon"></i><?php echo e($username); ?></div>
-      <div class="db-sidebar-role"><?php echo e($userRole); ?></div>
-    </div>
-
-    <form method="POST" action="logout" class="logout-form">
-      <?php csrf_input(); ?>
-      <button type="submit" class="db-nav-item logout-btn">
-        <i class="fa-solid fa-right-from-bracket"></i> Logout
-      </button>
-    </form>
-  </aside>
-
-  <!-- MAIN -->
-  <main class="db-main">
-
-    <!-- TOPBAR -->
-    <div class="db-topbar">
-      <div>
-        <h1>Dashboard Budidaya</h1>
-        <p><?php echo e(date('l, d F Y')); ?></p>
-      </div>
-      <div class="topbar-flex">
-        <div class="db-live-badge">
-          <span class="db-dot"></span>
-          <?php echo e($username); ?>
-        </div>
-        <form method="POST" action="logout" class="logout-form logout-form-mobile">
-          <?php csrf_input(); ?>
-          <button type="submit" class="db-btn db-btn-ghost db-logout-mobile" aria-label="Logout">
-            <i class="fa-solid fa-right-from-bracket"></i>
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- NOTIF -->
+<?php if ($dashboardOk): ?>
     <?php if (isset($_GET['success'])): ?>
       <div class="db-notif db-notif-ok"><i class="fa-solid fa-check"></i> Aksi berhasil diproses.</div>
     <?php elseif (isset($_GET['error'])): ?>
@@ -314,23 +182,23 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' https://c
       </div>
 
       <div class="db-card">
-        <div class="db-card-icon" style="background:#FEF3C7;color:#D97706;"><i class="fa-solid fa-bowl-food"></i></div>
+        <div class="db-card-icon ic-warning"><i class="fa-solid fa-bowl-food"></i></div>
         <div class="db-card-label">Total Pakan</div>
-        <div class="db-card-val"><?php echo number_format($totalPakanKg, 2, ',', '.'); ?> <span style="font-size:12px;font-weight:normal;color:var(--text-muted);">kg</span></div>
+        <div class="db-card-val"><?php echo number_format($totalPakanKg, 2, ',', '.'); ?> <span class="db-card-unit">kg</span></div>
         <div class="db-card-hint">Konsumsi pakan tercatat</div>
       </div>
 
       <div class="db-card">
-        <div class="db-card-icon" style="background:#FEE2E2;color:#DC2626;"><i class="fa-solid fa-skull-crossbones"></i></div>
+        <div class="db-card-icon ic-danger"><i class="fa-solid fa-skull-crossbones"></i></div>
         <div class="db-card-label">Total Kematian</div>
-        <div class="db-card-val"><?php echo number_format($totalMatiEkor, 0, ',', '.'); ?> <span style="font-size:12px;font-weight:normal;color:var(--text-muted);">ekor</span></div>
+        <div class="db-card-val"><?php echo number_format($totalMatiEkor, 0, ',', '.'); ?> <span class="db-card-unit">ekor</span></div>
         <div class="db-card-hint">Mortalitas aktif tercatat</div>
       </div>
 
       <div class="db-card">
-        <div class="db-card-icon" style="background:#DCFCE7;color:#166534;"><i class="fa-solid fa-fish"></i></div>
+        <div class="db-card-icon ic-success"><i class="fa-solid fa-fish"></i></div>
         <div class="db-card-label">Total Panen</div>
-        <div class="db-card-val"><?php echo number_format($totalPanenKg, 2, ',', '.'); ?> <span style="font-size:12px;font-weight:normal;color:var(--text-muted);">kg</span></div>
+        <div class="db-card-val"><?php echo number_format($totalPanenKg, 2, ',', '.'); ?> <span class="db-card-unit">kg</span></div>
         <div class="db-card-hint"><?php echo $totalPanenEkor > 0 ? number_format($totalPanenEkor, 0, ',', '.') . ' ekor dipanen' : 'Hasil panen tercatat'; ?></div>
       </div>
     </div>
@@ -342,7 +210,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' https://c
         <span class="db-tag"><?php echo $totalKolam; ?> Kolam</span>
       </div>
       <?php if (!empty($recentPonds)): ?>
-        <div style="overflow-x: auto; margin-bottom: 14px;">
+        <div class="table-wrap" style="margin-bottom: 14px;">
           <table class="db-table">
             <thead>
               <tr>
@@ -358,15 +226,15 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' https://c
                   <td><strong><?php echo e($p['nama']); ?></strong></td>
                   <td><?php echo e($p['lokasi'] ?? '-'); ?></td>
                   <td>
-                    <span style="display:inline-block; padding:2px 8px; border-radius:50px; font-size:10px; font-weight:500; <?php echo $p['status'] === 'aktif' ? 'background:#DCFCE7; color:#166534; border:1px solid #86EFAC;' : 'background:#F1F5F9; color:#64748B; border:1px solid #CBD5E1;'; ?>">
+                    <span class="db-badge <?php echo $p['status'] === 'aktif' ? 'badge-aktif' : 'badge-nonaktif'; ?>">
                       <?php echo ucfirst(e($p['status'])); ?>
                     </span>
                   </td>
                   <td>
                     <?php if ((int)$p['siklus_aktif'] > 0): ?>
-                      <span style="color: var(--primary); font-size: 11px; font-weight: 500;"><i class="fa-solid fa-fish-fins"></i> 1 Berjalan</span>
+                      <span class="db-badge badge-berjalan"><i class="fa-solid fa-fish-fins"></i> 1 Berjalan</span>
                     <?php else: ?>
-                      <span style="color: var(--text-faint); font-size: 11px;">Tidak ada</span>
+                      <span style="color: var(--text-faint); font-size: 12px;">Tidak ada</span>
                     <?php endif; ?>
                   </td>
                 </tr>
@@ -469,10 +337,5 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' https://c
         </a>
       </div>
     </div>
-
-  </main>
-</div>
-
-<script src="assets/js/dashboard.js"></script>
-</body>
-</html>
+<?php endif; ?>
+<?php seefish_app_end(); ?>

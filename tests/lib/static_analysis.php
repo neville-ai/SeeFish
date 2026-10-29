@@ -400,10 +400,36 @@ function sf_sql_call_analysis(array $args): array
 {
     $text = sf_tokens_text($args);
 
-    if (sf_has_token($args, T_VARIABLE) || sf_has_interpolated_string($args)) {
+    // Kasus 1: Hanya satu variabel tunggal (misal: prepare($sql)) tanpa string literal.
+    // Ini INCONCLUSIVE — variabel mungkin dibangun aman dari literal + placeholder,
+    // tetapi tidak dapat diverifikasi tanpa analisis alur data.
+    $significant = array_values(array_filter($args, static fn(array $t): bool => $t['id'] !== null));
+    $hasLiteral = sf_has_token($args, T_CONSTANT_ENCAPSED_STRING);
+    $hasVariable = sf_has_token($args, T_VARIABLE);
+    $hasInterpolated = sf_has_interpolated_string($args);
+
+    if ($hasVariable && !$hasInterpolated && !$hasLiteral) {
+        return [
+            'status' => 'INCONCLUSIVE',
+            'reason' => 'Argumen adalah variabel ($sql); tidak dapat memastikan isi SQL tanpa analisis alur data',
+            'sql' => $text,
+        ];
+    }
+
+    // Kasus 2: String literal dengan interpolasi variabel di dalamnya — selalu berbahaya.
+    if ($hasInterpolated) {
         return [
             'status' => 'FAIL',
-            'reason' => 'SQL mengandung variabel atau interpolasi dinamis',
+            'reason' => 'SQL mengandung interpolasi variabel dalam string (risiko injeksi)',
+            'sql' => $text,
+        ];
+    }
+
+    // Kasus 3: Campuran variabel dan literal — tidak dapat dipastikan aman.
+    if ($hasVariable && $hasLiteral) {
+        return [
+            'status' => 'FAIL',
+            'reason' => 'SQL mengandung campuran variabel dan literal string (risiko injeksi)',
             'sql' => $text,
         ];
     }
