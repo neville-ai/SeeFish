@@ -144,7 +144,7 @@ $sfActions = '';
 seefish_app_start([
     'nav' => 'dashboard',
     'title' => 'Dashboard - SeeFish',
-    'heading' => 'Dashboard Budidaya',
+    'heading' => 'Dashboard Kharis Neville Awuy',
     'subtitle' => date('l, d F Y'),
     'breadcrumbs' => [['Dashboard']],
     'actions' => $sfActions,
@@ -250,7 +250,6 @@ seefish_app_start([
       <?php else: ?>
         <div class="db-empty-state">
           <i class="fa-solid fa-water"></i>
-          <h3>Data kolam belum tersedia</h3>
           <p>Anda belum memiliki kolam budidaya terdaftar. Tambahkan kolam pertama Anda untuk memulai siklus.</p>
           <a href="kolam" class="db-btn db-btn-primary" style="display: inline-flex; width: auto; margin-top: 10px;">
             <i class="fa-solid fa-plus"></i> Tambah Kolam Pertama
