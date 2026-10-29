@@ -44,7 +44,7 @@ $totalPelaku = 0;
 
     <div class="land-badge">
       <span class="land-badge-dot"></span>
-      Platform Budidaya Ikan Air Tawar
+      Platform Budidaya Ikan Air Memet
     </div>
 
     <h1 class="land-title">
