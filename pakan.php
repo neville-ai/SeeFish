@@ -327,10 +327,10 @@ seefish_app_start([
                     </td>
                     <td style="text-align: right; white-space: nowrap;">
                       <?php if ($s['status'] === 'direncanakan'): ?>
-                        <button type="button" class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="openExecuteScheduleModal(<?php echo htmlspecialchars(json_encode($s), ENT_QUOTES, 'UTF-8'); ?>)">
+                        <button type="button" class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="openExecuteScheduleModal(<?php echo htmlspecialchars(json_encode($s, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8'); ?>)">
                           <i class="fa-solid fa-check"></i> Konfirmasi Beri Pakan
                         </button>
-                        <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="openCancelScheduleModal(<?php echo (int)$s['id']; ?>, '<?php echo e(addslashes($s['nama_kolam'])); ?>', '<?php echo e($s['tanggal_rencana']); ?>')">
+                        <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="openCancelScheduleModal(<?php echo (int)$s['id']; ?>, <?php echo htmlspecialchars(json_encode((string) $s['nama_kolam'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string) $s['tanggal_rencana'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8'); ?>)">
                           <i class="fa-solid fa-xmark"></i> Batal
                         </button>
                       <?php elseif ($s['status'] === 'terlaksana'): ?>
@@ -608,7 +608,16 @@ function closeAddScheduleModal() {
 function openExecuteScheduleModal(sch) {
   document.getElementById('exec_jadwal_id').value = sch.id;
   document.getElementById('exec_jumlah_kg_aktual').value = sch.jumlah_kg_rencana;
-  document.getElementById('exec_info').innerHTML = '<strong>' + sch.nama_kolam + '</strong> &mdash; ' + sch.nama_ikan + '<br>Target: <strong>' + sch.jumlah_kg_rencana + ' kg</strong> (' + sch.nama_pakan + ')';
+  var execInfo = document.getElementById('exec_info');
+  var pond = document.createElement('strong');
+  pond.textContent = String(sch.nama_kolam || '');
+  var fish = document.createTextNode(' — ' + String(sch.nama_ikan || ''));
+  var lineBreak = document.createElement('br');
+  var targetLabel = document.createTextNode('Target: ');
+  var target = document.createElement('strong');
+  target.textContent = String(sch.jumlah_kg_rencana || '0');
+  var targetSuffix = document.createTextNode(' kg (' + String(sch.nama_pakan || '') + ')');
+  execInfo.replaceChildren(pond, fish, lineBreak, targetLabel, target, targetSuffix);
   document.getElementById('executeScheduleModal').classList.add('active');
 }
 function closeExecuteScheduleModal() {

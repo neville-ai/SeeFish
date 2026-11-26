@@ -66,11 +66,17 @@ try {
         redirect('../siklus.php?error=invalid_dates');
     }
 
-    $stmt = $conn->prepare("UPDATE siklus_budidaya SET tanggal_selesai = ?, status = ? WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE siklus_budidaya AS sb
+         SET tanggal_selesai = ?, status = ?
+         WHERE sb.id = ?
+         AND EXISTS (
+             SELECT 1 FROM kolam k
+             WHERE k.id = sb.kolam_id AND k.user_id = ?
+         )");
     if ($stmt === false) {
         redirect('../siklus.php?error=db_error');
     }
-    $stmt->bind_param('ssi', $tanggalSelesai, $status, $id);
+    $stmt->bind_param('ssii', $tanggalSelesai, $status, $id, $userId);
     $stmt->execute();
     $stmt->close();
 

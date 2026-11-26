@@ -111,15 +111,21 @@ try {
 
     // 4. Update status jadwal_pakan menjadi terlaksana dengan relasi unik
     $stmtUpdate = $conn->prepare(
-        "UPDATE jadwal_pakan
+        "UPDATE jadwal_pakan AS j
          SET status = 'terlaksana', pemberian_pakan_id = ?
-         WHERE id = ? AND status = 'direncanakan'"
+         WHERE j.id = ? AND j.status = 'direncanakan'
+         AND EXISTS (
+             SELECT 1
+             FROM siklus_budidaya s
+             JOIN kolam k ON s.kolam_id = k.id
+             WHERE s.id = j.siklus_id AND k.user_id = ?
+         )"
     );
     if ($stmtUpdate === false) {
         $conn->rollback();
         redirect('../pakan.php?error=db_error');
     }
-    $stmtUpdate->bind_param('ii', $feedLogId, $jadwalId);
+    $stmtUpdate->bind_param('iii', $feedLogId, $jadwalId, $userId);
     $stmtUpdate->execute();
     $stmtUpdate->close();
 

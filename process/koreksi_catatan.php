@@ -71,11 +71,19 @@ try {
         }
 
         // 2. Update status_catatan menjadi dikoreksi
-        $stmt = $conn->prepare("UPDATE mortalitas SET status_catatan = 'dikoreksi', catatan = ? WHERE id = ?");
+        $stmt = $conn->prepare("UPDATE mortalitas AS m
+         SET status_catatan = 'dikoreksi', catatan = ?
+         WHERE m.id = ?
+         AND EXISTS (
+             SELECT 1
+             FROM siklus_budidaya s
+             JOIN kolam k ON s.kolam_id = k.id
+             WHERE s.id = m.siklus_id AND k.user_id = ?
+         )");
         if ($stmt === false) {
             redirect('../riwayat.php?error=db_error');
         }
-        $stmt->bind_param('si', $newCatatan, $recordId);
+        $stmt->bind_param('sii', $newCatatan, $recordId, $userId);
         $stmt->execute();
         $stmt->close();
 
@@ -127,11 +135,19 @@ try {
         $siklusId = (int) $row['siklus_id'];
 
         // 2. Update status_catatan menjadi dikoreksi pada tabel panen
-        $stmt = $conn->prepare("UPDATE panen SET status_catatan = 'dikoreksi', catatan = ? WHERE id = ? AND siklus_id = ?");
+        $stmt = $conn->prepare("UPDATE panen AS p
+         SET status_catatan = 'dikoreksi', catatan = ?
+         WHERE p.id = ? AND p.siklus_id = ?
+         AND EXISTS (
+             SELECT 1
+             FROM siklus_budidaya s
+             JOIN kolam k ON s.kolam_id = k.id
+             WHERE s.id = p.siklus_id AND k.user_id = ?
+         )");
         if ($stmt === false) {
             redirect('../riwayat.php?error=db_error');
         }
-        $stmt->bind_param('sii', $newCatatan, $recordId, $siklusId);
+        $stmt->bind_param('siii', $newCatatan, $recordId, $siklusId, $userId);
         $stmt->execute();
         $stmt->close();
 

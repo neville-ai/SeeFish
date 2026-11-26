@@ -75,15 +75,21 @@ try {
 
     // 3. Update status menjadi dibatalkan
     $stmtUpdate = $conn->prepare(
-        "UPDATE jadwal_pakan
+        "UPDATE jadwal_pakan AS j
          SET status = 'dibatalkan', catatan = ?
-         WHERE id = ? AND status = 'direncanakan'"
+         WHERE j.id = ? AND j.status = 'direncanakan'
+         AND EXISTS (
+             SELECT 1
+             FROM siklus_budidaya s
+             JOIN kolam k ON s.kolam_id = k.id
+             WHERE s.id = j.siklus_id AND k.user_id = ?
+         )"
     );
     if ($stmtUpdate === false) {
         $conn->rollback();
         redirect('../pakan.php?error=db_error');
     }
-    $stmtUpdate->bind_param('si', $finalCatatan, $jadwalId);
+    $stmtUpdate->bind_param('sii', $finalCatatan, $jadwalId, $userId);
     $stmtUpdate->execute();
     $stmtUpdate->close();
 

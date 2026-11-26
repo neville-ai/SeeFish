@@ -151,7 +151,7 @@ seefish_app_start([
                     <?php endif; ?>
                   </td>
                   <td>
-                    <button type="button" class="act-btn act-edit" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($p), ENT_QUOTES, 'UTF-8'); ?>)">
+                    <button type="button" class="act-btn act-edit" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($p, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8'); ?>)">
                       <i class="fa-solid fa-pen-to-square"></i> Edit
                     </button>
                   </td>

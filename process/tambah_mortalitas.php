@@ -117,7 +117,7 @@ try {
 
     $penyebabVal = $penyebab !== '' ? $penyebab : null;
     $catatanVal = $catatan !== '' ? $catatan : null;
-    $stmt->bind_param('isisss', $siklusId, $tanggal, $jumlahEkor, $penyebabVal, $catatanVal);
+    $stmt->bind_param('isiss', $siklusId, $tanggal, $jumlahEkor, $penyebabVal, $catatanVal);
     $stmt->execute();
     $insertId = (int) $conn->insert_id;
     $stmt->close();

@@ -28,6 +28,18 @@ $jumlahEkor = post_int('jumlah_ekor');
 $hargaPerKg = post_float('harga_per_kg');
 $catatan = post_trimmed('catatan');
 
+// Bedakan field opsional yang tidak diisi dengan nilai yang dikirim tetapi tidak valid.
+$jumlahEkorInput = $_POST['jumlah_ekor'] ?? null;
+$hargaPerKgInput = $_POST['harga_per_kg'] ?? null;
+
+$jumlahEkorDiisi = $jumlahEkorInput !== null && $jumlahEkorInput !== '';
+$hargaPerKgDiisi = $hargaPerKgInput !== null && $hargaPerKgInput !== '';
+
+if (($jumlahEkorDiisi && $jumlahEkor === null)
+    || ($hargaPerKgDiisi && $hargaPerKg === null)) {
+    redirect('../panen.php?error=invalid');
+}
+
 if (!valid_positive_int($siklusId)
     || !valid_date_ymd($tanggal)
     || !valid_positive_number($jumlahKg)
