@@ -4,6 +4,27 @@ declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 
 /**
+ * Bersihkan karakter kontrol agar input tidak dapat memalsukan baris audit.
+ */
+function audit_log_clean_text(string $value, int $maxLength = 1000): string
+{
+    $value = preg_replace('/[\x00-\x1F\x7F]/', ' ', $value) ?? '';
+    $value = trim($value);
+
+    if (function_exists('mb_substr')) {
+        return mb_substr($value, 0, $maxLength, 'UTF-8');
+    }
+
+    return substr($value, 0, $maxLength);
+}
+
+function audit_log_clean_action(string $action): string
+{
+    $action = strtoupper(preg_replace('/[^a-zA-Z0-9_-]/', '_', $action) ?? '');
+    return $action !== '' ? substr($action, 0, 80) : 'UNKNOWN';
+}
+
+/**
  * Tulis entri aktivitas (best effort). Gagal saat menulis ke database tidak
  * akan membocorkan error database ke pengguna; error dicatat ke error_log.
  */
@@ -31,25 +52,11 @@ function write_log(mysqli $conn, string $action, int $user_id = 0, string $info 
  */
 function write_log_strict(mysqli $conn, string $action, int $user_id = 0, string $info = '', ?string $entity_type = null, ?int $entity_id = null): void
 {
-    $action = strtoupper(preg_replace('/[^a-zA-Z0-9_-]/', '_', $action) ?? 'UNKNOWN');
-    if ($action === '') {
-        $action = 'UNKNOWN';
-    }
-
-    $info = str_replace(["\r", "\n"], ' ', $info);
-    if (function_exists('mb_substr')) {
-        $info = mb_substr($info, 0, 1000, 'UTF-8');
-    } else {
-        $info = substr($info, 0, 1000);
-    }
+    $action = audit_log_clean_action($action);
+    $info = audit_log_clean_text($info, 1000);
 
     $userId = $user_id > 0 ? $user_id : null;
-    $entityStr = $entity_type !== null ? (string) $entity_type : '';
-    if (function_exists('mb_substr')) {
-        $entityStr = mb_substr($entityStr, 0, 60, 'UTF-8');
-    } else {
-        $entityStr = substr($entityStr, 0, 60);
-    }
+    $entityStr = audit_log_clean_text($entity_type ?? '', 60);
 
     $ip = current_ip();
     $userAgent = current_user_agent();
@@ -71,6 +78,9 @@ function write_log_strict(mysqli $conn, string $action, int $user_id = 0, string
 
 function write_log_file(string $action, int $userId, string $info): void
 {
+    $action = audit_log_clean_action($action);
+    $info = audit_log_clean_text($info, 1000);
+
     $logDir = dirname(__DIR__) . '/logs';
     $logFile = $logDir . '/activity_' . date('Y-m') . '.log';
 

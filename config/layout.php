@@ -26,22 +26,6 @@ function seefish_nav_items(): array
     ];
 }
 
-function seefish_security_headers(bool $allowInline = true): void
-{
-    if (headers_sent()) {
-        return;
-    }
-
-    $script = $allowInline
-        ? "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self';"
-        : "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self';";
-
-    header('X-Content-Type-Options: nosniff');
-    header('X-Frame-Options: DENY');
-    header('Referrer-Policy: strict-origin-when-cross-origin');
-    header('Content-Security-Policy: ' . $script);
-}
-
 /**
  * @param array{
  *   nav: string,
@@ -56,7 +40,6 @@ function seefish_security_headers(bool $allowInline = true): void
  */
 function seefish_app_start(array $page): void
 {
-    seefish_security_headers(true);
 
     $nav = (string) ($page['nav'] ?? '');
     $title = (string) ($page['title'] ?? 'SeeFish');

@@ -12,15 +12,49 @@ require_once __DIR__ . '/../config/validation.php';
 require_once __DIR__ . '/../config/logger.php';
 
 $userId = (int) $_SESSION['user_id'];
-$tipe = (string) ($_GET['tipe'] ?? 'siklus');
+$tipeInput = $_GET['tipe'] ?? 'siklus';
 $validTipe = ['siklus', 'pakan', 'mortalitas', 'panen'];
-if (!in_array($tipe, $validTipe, true)) {
-    $tipe = 'siklus';
+
+if (!is_string($tipeInput) || !in_array($tipeInput, $validTipe, true)) {
+    http_response_code(400);
+    exit('Parameter ekspor tidak valid.');
+}
+$tipe = $tipeInput;
+
+$siklusInput = $_GET['siklus_id'] ?? '';
+$siklusId = null;
+
+if ($siklusInput !== '') {
+    if (!is_string($siklusInput)) {
+        http_response_code(400);
+        exit('Filter siklus tidak valid.');
+    }
+
+    $parsedSiklusId = filter_var($siklusInput, FILTER_VALIDATE_INT);
+    if ($parsedSiklusId === false || $parsedSiklusId <= 0) {
+        http_response_code(400);
+        exit('Filter siklus tidak valid.');
+    }
+    $siklusId = $parsedSiklusId;
 }
 
-$siklusId = isset($_GET['siklus_id']) && $_GET['siklus_id'] !== '' ? (int) $_GET['siklus_id'] : null;
-$dariTanggal = isset($_GET['dari_tanggal']) && is_string($_GET['dari_tanggal']) && valid_date_ymd($_GET['dari_tanggal']) ? $_GET['dari_tanggal'] : null;
-$sampaiTanggal = isset($_GET['sampai_tanggal']) && is_string($_GET['sampai_tanggal']) && valid_date_ymd($_GET['sampai_tanggal']) ? $_GET['sampai_tanggal'] : null;
+$dariInput = $_GET['dari_tanggal'] ?? '';
+$sampaiInput = $_GET['sampai_tanggal'] ?? '';
+
+if (!is_string($dariInput) || !is_string($sampaiInput)
+    || ($dariInput !== '' && !valid_date_ymd($dariInput))
+    || ($sampaiInput !== '' && !valid_date_ymd($sampaiInput))) {
+    http_response_code(400);
+    exit('Filter tanggal tidak valid.');
+}
+
+if ($dariInput !== '' && $sampaiInput !== '' && $dariInput > $sampaiInput) {
+    http_response_code(400);
+    exit('Rentang tanggal tidak valid.');
+}
+
+$dariTanggal = $dariInput !== '' ? $dariInput : null;
+$sampaiTanggal = $sampaiInput !== '' ? $sampaiInput : null;
 
 // Jika siklus_id ditentukan, verifikasi kepemilikan oleh user yang login (Tenant Isolation)
 if ($siklusId !== null) {

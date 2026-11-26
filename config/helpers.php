@@ -102,16 +102,22 @@ function app_name(): string
  */
 function get_siklus_stock_stats(mysqli $conn, int $siklusId, bool $forUpdate = false): ?array
 {
+    // Statistik hanya boleh dibaca oleh pemilik siklus yang sedang login.
+    $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
+    if ($userId <= 0 || $siklusId <= 0) {
+        return null;
+    }
+
     if ($forUpdate) {
-        $stmt = $conn->prepare("SELECT id, kolam_id, jenis_ikan_id, tanggal_mulai, status, jumlah_tebar FROM siklus_budidaya WHERE id = ? LIMIT 1 FOR UPDATE");
+        $stmt = $conn->prepare("SELECT s.id, s.kolam_id, s.jenis_ikan_id, s.tanggal_mulai, s.status, s.jumlah_tebar FROM siklus_budidaya s JOIN kolam k ON s.kolam_id = k.id WHERE s.id = ? AND k.user_id = ? LIMIT 1 FOR UPDATE");
     } else {
-        $stmt = $conn->prepare("SELECT id, kolam_id, jenis_ikan_id, tanggal_mulai, status, jumlah_tebar FROM siklus_budidaya WHERE id = ? LIMIT 1");
+        $stmt = $conn->prepare("SELECT s.id, s.kolam_id, s.jenis_ikan_id, s.tanggal_mulai, s.status, s.jumlah_tebar FROM siklus_budidaya s JOIN kolam k ON s.kolam_id = k.id WHERE s.id = ? AND k.user_id = ? LIMIT 1");
     }
 
     if ($stmt === false) {
         return null;
     }
-    $stmt->bind_param('i', $siklusId);
+    $stmt->bind_param('ii', $siklusId, $userId);
     $stmt->execute();
     $siklus = $stmt->get_result()->fetch_assoc();
     $stmt->close();
@@ -217,7 +223,9 @@ function csv_render(array $headers, array $rows): string
             foreach ($fields as $field) {
                 $safeFields[] = csv_safe_cell($field);
             }
-            fputcsv($stream, $safeFields, ',', '"', "\\");
+            if (fputcsv($stream, $safeFields, ',', '"', '', "\n") === false) {
+                throw new RuntimeException('Gagal menulis baris CSV.');
+            }
         };
 
         $writeRow($headers);

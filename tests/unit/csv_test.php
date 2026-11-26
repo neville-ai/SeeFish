@@ -2,12 +2,58 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../lib/csv_spec.php';
+require_once __DIR__ . '/../../config/helpers.php';
 
 /**
  * Test spesifikasi offline. Tidak memuat bootstrap aplikasi dan tidak
  * membuktikan bahwa fitur ekspor CSV produksi sudah tersedia.
  */
 return [
+
+    'PRODUKSI: csv_safe_cell menetralkan formula spreadsheet' => function (): void {
+        $cases = [
+            '=1+1' => "'=1+1",
+            '+1+1' => "'+1+1",
+            '-1+1' => "'-1+1",
+            '@SUM(A1:A2)' => "'@SUM(A1:A2)",
+            ' =1+1' => "' =1+1",
+            "\t=1+1" => "'\t=1+1",
+            "\n-1+1" => "'\n-1+1",
+            "\r@SUM(A1)" => "'\r@SUM(A1)",
+        ];
+
+        foreach ($cases as $input => $expected) {
+            test_assert_same($expected, csv_safe_cell($input));
+        }
+    },
+
+    'PRODUKSI: csv_safe_cell menangani nilai normal, null, dan tipe dasar' => function (): void {
+        test_assert_same('Ikan Nila', csv_safe_cell('Ikan Nila'));
+        test_assert_same('', csv_safe_cell(null));
+        test_assert_same('', csv_safe_cell(''));
+        test_assert_same('0', csv_safe_cell(false));
+        test_assert_same('1', csv_safe_cell(true));
+        test_assert_same('125.5', csv_safe_cell(125.5));
+        test_assert_same('', csv_safe_cell(['tidak', 'valid']));
+    },
+
+    'PRODUKSI: csv_render mengamankan formula dan format CSV' => function (): void {
+        $csv = csv_render(
+            ['Nama', 'Jumlah', '=Formula'],
+            [
+                ['Ikan "Nila"', 10, '=1+1'],
+                ['Ikan, Mas', "baris1\nbaris2", 'Normal'],
+            ]
+        );
+
+        $expected = "Nama,Jumlah,'=Formula\n"
+            . "\"Ikan \"\"Nila\"\"\",10,'=1+1\n"
+            . "\"Ikan, Mas\",\"baris1\nbaris2\",Normal\n";
+
+        test_assert_same($expected, $csv);
+    },
+
+
     'spesifikasi CSV: formula injection =, +, -, @ dinetralkan' => function (): void {
         $cases = [
             '=1+1' => "'=1+1",

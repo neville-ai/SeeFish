@@ -3,8 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/session.php';
 
-$sessionTimeout = (int) (env('SESSION_TIMEOUT', '1800') ?? '1800');
-$sessionTimeout = max(300, $sessionTimeout);
+$sessionTimeout = session_timeout_seconds();
 $loginRedirect = defined('AUTH_LOGIN_REDIRECT') ? AUTH_LOGIN_REDIRECT : 'login';
 
 if (!empty($_SESSION['last_activity'])
@@ -16,5 +15,14 @@ if (!empty($_SESSION['last_activity'])
 $_SESSION['last_activity'] = time();
 
 if (empty($_SESSION['login']) || empty($_SESSION['user_id'])) {
+    redirect($loginRedirect);
+}
+
+
+// Tolak sesi autentikasi yang tidak memiliki role yang valid.
+if (!isset($_SESSION['role'])
+    || !is_string($_SESSION['role'])
+    || !in_array($_SESSION['role'], ['Admin Kolam'], true)) {
+    destroy_current_session();
     redirect($loginRedirect);
 }

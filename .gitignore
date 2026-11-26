@@ -24,3 +24,5 @@ Thumbs.db
 # Artifact/backup lokal
 /backups/
 /artifacts/
+__pycache__/
+*.py[cod]

@@ -8,6 +8,7 @@ $testFiles = [
     __DIR__ . '/unit/validation_test.php',
     __DIR__ . '/unit/helpers_test.php',
     __DIR__ . '/unit/csrf_test.php',
+    __DIR__ . '/unit/csv_test.php',
 ];
 
 $total = 0;

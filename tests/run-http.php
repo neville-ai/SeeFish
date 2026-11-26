@@ -277,10 +277,12 @@ function http_create_auth_session(string $sessionDir): array
     $csrfToken = bin2hex(random_bytes(32));
     $username = 'smoke-user';
     $userId = 4242;
+    $role = 'Admin Kolam';
 
     $data = 'login|b:1;'
         . 'user_id|i:' . $userId . ';'
         . 'username|s:' . strlen($username) . ':"' . $username . '";'
+        . 'role|s:' . strlen($role) . ':"' . $role . '";'
         . 'last_activity|i:' . time() . ';'
         . 'csrf_token|s:' . strlen($csrfToken) . ':"' . $csrfToken . '";';
 

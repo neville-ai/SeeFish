@@ -5,6 +5,7 @@ require_once __DIR__ . '/config/auth.php';
 require_once __DIR__ . '/config/csrf.php';
 require_once __DIR__ . '/config/koneksi.php';
 require_once __DIR__ . '/config/helpers.php';
+require_once __DIR__ . '/config/validation.php';
 require_once __DIR__ . '/config/layout.php';
 
 $username = (string) ($_SESSION['username'] ?? 'Pengguna');
@@ -20,9 +21,41 @@ $totalAllPanenKg = 0.0;
 $totalAllPakanKg = 0.0;
 $totalAllSisaIkan = 0;
 
-$filterSiklus = isset($_GET['siklus_id']) && $_GET['siklus_id'] !== '' ? (int) $_GET['siklus_id'] : null;
-$dariTanggal = isset($_GET['dari_tanggal']) && is_string($_GET['dari_tanggal']) ? trim($_GET['dari_tanggal']) : '';
-$sampaiTanggal = isset($_GET['sampai_tanggal']) && is_string($_GET['sampai_tanggal']) ? trim($_GET['sampai_tanggal']) : '';
+$siklusInput = $_GET['siklus_id'] ?? '';
+$filterSiklus = null;
+
+if ($siklusInput !== '') {
+    if (!is_string($siklusInput)) {
+        http_response_code(400);
+        exit('Filter siklus tidak valid.');
+    }
+
+    $parsedSiklusId = filter_var($siklusInput, FILTER_VALIDATE_INT);
+    if ($parsedSiklusId === false || $parsedSiklusId <= 0) {
+        http_response_code(400);
+        exit('Filter siklus tidak valid.');
+    }
+    $filterSiklus = $parsedSiklusId;
+}
+
+$dariInput = $_GET['dari_tanggal'] ?? '';
+$sampaiInput = $_GET['sampai_tanggal'] ?? '';
+
+if (!is_string($dariInput) || !is_string($sampaiInput)
+    || ($dariInput !== '' && !valid_date_ymd($dariInput))
+    || ($sampaiInput !== '' && !valid_date_ymd($sampaiInput))) {
+    http_response_code(400);
+    exit('Filter tanggal tidak valid.');
+}
+
+$dariTanggal = $dariInput;
+$sampaiTanggal = $sampaiInput;
+
+if ($dariTanggal !== '' && $sampaiTanggal !== '' && $dariTanggal > $sampaiTanggal) {
+    http_response_code(400);
+    exit('Rentang tanggal tidak valid.');
+}
+
 $eksporOk = true;
 
 try {

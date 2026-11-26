@@ -35,7 +35,7 @@ $error = isset($_GET['error']) && is_string($_GET['error']) ? $_GET['error'] : '
     <span class="auth-logo-text">SeeFish</span>
   </div>
 
-  <div class="auth-dark-title">Selamat Datang  Memet Sharon</div>
+  <div class="auth-dark-title">Selamat Datang</div>
   <div class="auth-dark-sub">Masuk ke akun Anda untuk melanjutkan</div>
 
   <?php if ($error === 'timeout'): ?>
@@ -58,7 +58,7 @@ $error = isset($_GET['error']) && is_string($_GET['error']) ? $_GET['error'] : '
       <label class="auth-field-label" for="login_user">Username <span class="req">*</span></label>
       <div class="auth-input-wrap">
         <i class="fa-solid fa-user auth-input-icon"></i>
-        <input type="text" id="login_user" name="user" placeholder="Masukkan username" autocomplete="off" maxlength="50" required>
+        <input type="text" id="login_user" name="user" placeholder="Masukkan username" autocomplete="username" maxlength="50" required>
       </div>
     </div>
 
@@ -66,7 +66,7 @@ $error = isset($_GET['error']) && is_string($_GET['error']) ? $_GET['error'] : '
       <label class="auth-field-label" for="password">Password <span class="req">*</span></label>
       <div class="auth-input-wrap">
         <i class="fa-solid fa-lock auth-input-icon"></i>
-        <input type="password" id="password" name="pass" placeholder="Masukkan password" autocomplete="new-password" maxlength="128" required>
+        <input type="password" id="password" name="pass" placeholder="Masukkan password" autocomplete="current-password" maxlength="128" required>
         <i class="fa-solid fa-eye auth-eye" aria-hidden="true"></i>
       </div>
     </div>
